@@ -26,7 +26,7 @@ import java.util.Date;
  */
 public class Version {
     // This version shows in the About dialog
-    private static final String V = "10.8.2-SNAPSHOT";
+    private static final String V = "10.8.3-SNAPSHOT";
     public static String getVersionAndBuild() {
         return ParameterProcessing.APP_NAME + " " + getVersionNumber()  + ". Release date: " + getBuildTime();
     }       
