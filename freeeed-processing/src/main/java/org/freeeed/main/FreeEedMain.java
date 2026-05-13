@@ -23,13 +23,21 @@ import org.apache.commons.cli.Options;
 import org.freeeed.services.Project;
 import org.freeeed.services.Stats;
 import org.freeeed.services.Util;
+import org.freeeed.ui.InventoryUI;
 import org.freeeed.ui.ProcessProgressUI;
 import org.freeeed.ui.StagingProgressUI;
 import org.freeeed.util.LogFactory;
 import org.freeeed.util.OsUtil;
 
+import javax.swing.SwingUtilities;
+import java.awt.EventQueue;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
+import java.util.stream.Stream;
 
 /**
  * Main application instance
@@ -194,6 +202,64 @@ public class FreeEedMain {
         StagingProgressUI stagingProgressUI = new StagingProgressUI(null, false);
         stagingProgressUI.setVisible(true);
     }
+
+    /**
+     * Stage from GUI in a thread
+     *
+     * @throws Exception
+     */
+    public void runInventoryInput() throws Exception {
+        Project project = Project.getCurrentProject();
+        if (project == null) {
+            return;
+        }
+
+        project.getSummaryMap().init();
+        project.getSummaryMap().startTimer();
+
+        String[] inputs = project.getInputs();
+        if (inputs != null) {
+            for (String input : inputs) {
+                if (input == null || input.trim().isEmpty()) {
+                    continue;
+                }
+
+                try {
+                    Path root = Paths.get(input.trim());
+                    if (!Files.exists(root)) {
+                        continue;
+                    }
+
+                    if (Files.isRegularFile(root)) {
+                        project.getSummaryMap().addToSummaryMap(root.toFile());
+                        continue;
+                    }
+
+                    try (Stream<Path> pathStream = Files.walk(root)) {
+                        pathStream
+                                .filter(Files::isRegularFile)
+                                .forEach(path -> project.getSummaryMap().addToSummaryMap(path.toFile()));
+                    }
+                } catch (InvalidPathException e) {
+                    LOGGER.warning("Skipping invalid input path: " + input);
+                }
+            }
+        }
+
+        project.getSummaryMap().stopTimer();
+
+        Runnable showInventory = () -> {
+            InventoryUI inventoryUI = new InventoryUI(null, true);
+            inventoryUI.setVisible(true);
+        };
+
+        if (SwingUtilities.isEventDispatchThread()) {
+            showInventory.run();
+        } else {
+            EventQueue.invokeAndWait(showInventory);
+        }
+    }
+
 
     // TODO main engine should not mention gui
     private void openGUI() {

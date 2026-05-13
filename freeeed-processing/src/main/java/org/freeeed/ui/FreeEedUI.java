@@ -102,6 +102,7 @@ public class FreeEedUI extends javax.swing.JFrame {
 
         panel1 = new java.awt.Panel();
         jSeparator1 = new javax.swing.JSeparator();
+        statusLabel = new javax.swing.JLabel();
         mainMenu = new javax.swing.JMenuBar();
         fileMenu = new javax.swing.JMenu();
         menuItemProjects = new javax.swing.JMenuItem();
@@ -112,6 +113,7 @@ public class FreeEedUI extends javax.swing.JFrame {
         editMenu = new javax.swing.JMenu();
         menuItemProjectOptions = new javax.swing.JMenuItem();
         processMenu = new javax.swing.JMenu();
+        InventoryMenuItem = new javax.swing.JMenuItem();
         stageMenuItem = new javax.swing.JMenuItem();
         processMenuItem = new javax.swing.JMenuItem();
         processSeparator = new javax.swing.JPopupMenu.Separator();
@@ -145,6 +147,10 @@ public class FreeEedUI extends javax.swing.JFrame {
         setTitle("FreeEed - Graphical User Interface");
         setResizable(false);
         setSize(new java.awt.Dimension(670, 500));
+
+        statusLabel.setBackground(java.awt.Color.lightGray);
+        statusLabel.setText("No project open.");
+        statusLabel.setBorder(javax.swing.BorderFactory.createEmptyBorder(2, 5, 2, 5));
 
         fileMenu.setText("File");
         fileMenu.addActionListener(new java.awt.event.ActionListener() {
@@ -201,8 +207,21 @@ public class FreeEedUI extends javax.swing.JFrame {
         mainMenu.add(editMenu);
 
         processMenu.setText("Process");
+        processMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                processMenuActionPerformed(evt);
+            }
+        });
 
-        stageMenuItem.setText("Stage");
+        InventoryMenuItem.setText("Inventory inputs");
+        InventoryMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                InventoryMenuItemActionPerformed(evt);
+            }
+        });
+        processMenu.add(InventoryMenuItem);
+
+        stageMenuItem.setText("Stage files");
         stageMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 stageMenuItemActionPerformed(evt);
@@ -210,7 +229,7 @@ public class FreeEedUI extends javax.swing.JFrame {
         });
         processMenu.add(stageMenuItem);
 
-        processMenuItem.setText("Process");
+        processMenuItem.setText("Process staged files");
         processMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 processMenuItemActionPerformed(evt);
@@ -325,15 +344,21 @@ public class FreeEedUI extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jSeparator1, javax.swing.GroupLayout.DEFAULT_SIZE, 658, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jSeparator1, javax.swing.GroupLayout.DEFAULT_SIZE, 658, Short.MAX_VALUE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(statusLabel)
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(413, Short.MAX_VALUE)
+                .addContainerGap(409, Short.MAX_VALUE)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(34, 34, 34))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(statusLabel)
+                .addGap(10, 10, 10))
         );
 
         pack();
@@ -422,6 +447,14 @@ public class FreeEedUI extends javax.swing.JFrame {
         openLicenseDialog();
     }//GEN-LAST:event_licenseMenuItemActionPerformed
 
+    private void processMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_processMenuActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_processMenuActionPerformed
+
+    private void InventoryMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_InventoryMenuItemActionPerformed
+        inventoryProject();
+    }//GEN-LAST:event_InventoryMenuItemActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -496,6 +529,7 @@ public class FreeEedUI extends javax.swing.JFrame {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenuItem InventoryMenuItem;
     private javax.swing.JMenuItem aboutMenuItem;
     private javax.swing.JMenuItem backupRestoreMenuItem;
     private javax.swing.JMenuItem changelogMenuItem;
@@ -525,6 +559,7 @@ public class FreeEedUI extends javax.swing.JFrame {
     private javax.swing.JMenu reviewMenu;
     private javax.swing.JMenu settingsMenu;
     private javax.swing.JMenuItem stageMenuItem;
+    private javax.swing.JLabel statusLabel;
     // End of variables declaration//GEN-END:variables
 
     @Override
@@ -1128,5 +1163,7 @@ public class FreeEedUI extends javax.swing.JFrame {
         editorPane.setText(markdownToHtml(latestSectionMarkdown));
         editorPane.setCaretPosition(0);
     }
+    private void inventoryProject() {
 
+    }
 }

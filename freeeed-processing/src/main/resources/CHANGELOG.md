@@ -1,5 +1,17 @@
 # Changelog
 
+## Version 10.8.4
+### Added
+
+• Inventory inputs workflow
+• Status bar notifications
+• Separated staging and processing actions
+### Improved
+
+• Simplified processing workflow
+• Reduced unnecessary popup dialogs
+• Clearer workflow navigation
+
 ## Version 10.8.1
 ### Added
 - PII analytics
