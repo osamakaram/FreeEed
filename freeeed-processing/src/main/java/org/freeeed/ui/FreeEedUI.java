@@ -1164,6 +1164,31 @@ public class FreeEedUI extends javax.swing.JFrame {
         editorPane.setCaretPosition(0);
     }
     private void inventoryProject() {
+        Project project = Project.getCurrentProject();
+        if (project.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please create or open a project first");
+            return;
+        }
+        // check for empty input directories
+        String[] dirs = project.getInputs();
+        if (dirs.length == 0) {
+            JOptionPane.showMessageDialog(rootPane, "You selected no data to stage");
+            return;
+        }
+        for (String dir : dirs) {
+            File file = new File(dir);
+            if (file.isDirectory() && file.list().length == 0) {
+                JOptionPane.showMessageDialog(rootPane, "Some of the directories you are trying to stage are empty. "
+                        + "\\It does not make sense to stage them and may lead to confusion."
+                        + "\\Please check the project directories");
+                return;
+            }
+        }
+        try {
+            FreeEedMain.getInstance().runInventoryInput();
+        } catch (Exception e) {
+            LOGGER.severe("Error staging project");
+        }
 
     }
 }
