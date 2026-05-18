@@ -270,6 +270,12 @@
                 <artifactId>poi</artifactId>
                 <version>5.2.5</version>
             </dependency>
+            <!-- Modern Flat Look and Feel -->
+            <dependency>
+                <groupId>com.formdev</groupId>
+                <artifactId>flatlaf</artifactId>
+                <version>3.4.1</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <build>

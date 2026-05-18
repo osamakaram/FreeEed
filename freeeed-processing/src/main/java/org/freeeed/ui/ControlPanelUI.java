@@ -112,9 +112,9 @@ public class ControlPanelUI extends JFrame {
     }
 
     public static void main(String[] args) {
-        // Set system look and feel
+        // Set modern flat look and feel
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            com.formdev.flatlaf.FlatLightLaf.setup();
         } catch (Exception e) {
             e.printStackTrace();
         }
