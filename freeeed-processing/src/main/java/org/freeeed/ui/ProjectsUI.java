@@ -387,6 +387,7 @@ public class ProjectsUI extends javax.swing.JDialog {
     private void openProjectForEditing() throws Exception {
         if (selectProject()) {
             doClose(RET_OK);
+            FreeEedUI.getInstance().updateStatus();
             FreeEedUI.getInstance().showProcessingOptions();
         }
     }
@@ -407,7 +408,7 @@ public class ProjectsUI extends javax.swing.JDialog {
     private void openProject() throws Exception {
         if (selectProject()) {
             doClose(RET_OK);
-            FreeEedUI.getInstance().updateTitle(Project.getCurrentProject().getProjectName());
+            FreeEedUI.getInstance().updateStatus();
         }
     }
     
@@ -441,6 +442,7 @@ public class ProjectsUI extends javax.swing.JDialog {
         Project.setCurrentProject(project);
         LOGGER.fine("Opening project " + project.getProjectCode());
         doClose(RET_OK);
+        FreeEedUI.getInstance().updateStatus();
         FreeEedUI.getInstance().showProcessingOptions();
     }
        

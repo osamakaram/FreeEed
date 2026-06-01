@@ -45,7 +45,8 @@ import java.util.logging.Logger;
 public class FreeEedUI extends javax.swing.JFrame {
 
     private final static Logger LOGGER = LogFactory.getLogger(FreeEedUI.class.getName());
-    public static String defaultTitle = ParameterProcessing.APP_NAME + ParameterProcessing.TM + " - e-Discovery, Search, and AI Platform";
+    public static String defaultTitle = ParameterProcessing.APP_NAME + ParameterProcessing.TM
+            + " v" + Version.getVersionNumber() + " - e-Discovery, Search, and AI Platform";
 
     private static FreeEedUI instance;
 
@@ -572,12 +573,80 @@ public class FreeEedUI extends javax.swing.JFrame {
      * Hide/disable premium features based on remembered or current edition selection.
      */
 
+    private JPanel welcomePanel;
+
     private void myInitComponents() {
         addWindowListener(new FrameListener());
+        setResizable(true);
         setBounds(64, 40, 640, 400);
         setLocationRelativeTo(null);
-        String title = defaultTitle;
-        setTitle(title);
+        setTitle(defaultTitle);
+
+        // Replace GroupLayout with BorderLayout so we can use the main area
+        Container content = getContentPane();
+        content.removeAll();
+        content.setLayout(new BorderLayout());
+
+        // Bottom: separator + status
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
+        bottomPanel.add(jSeparator1);
+        JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+        statusPanel.add(statusLabel);
+        bottomPanel.add(statusPanel);
+        content.add(bottomPanel, BorderLayout.SOUTH);
+
+        // Center: welcome panel
+        welcomePanel = createWelcomePanel();
+        content.add(welcomePanel, BorderLayout.CENTER);
+
+        content.revalidate();
+        content.repaint();
+    }
+
+    private JPanel createWelcomePanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.WHITE);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(5, 0, 15, 0);
+
+        JLabel titleLabel = new JLabel("Welcome to FreeEed");
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
+        titleLabel.setForeground(new Color(60, 60, 60));
+        panel.add(titleLabel, gbc);
+
+        gbc.gridy++;
+        gbc.insets = new Insets(5, 0, 20, 0);
+        JLabel subtitleLabel = new JLabel("e-Discovery, Search, and AI Platform");
+        subtitleLabel.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        subtitleLabel.setForeground(Color.GRAY);
+        panel.add(subtitleLabel, gbc);
+
+        gbc.gridy++;
+        gbc.insets = new Insets(5, 0, 5, 0);
+        JButton openBtn = new JButton("Open Project");
+        openBtn.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        openBtn.addActionListener(e -> openProject());
+        panel.add(openBtn, gbc);
+
+        gbc.gridy++;
+        JButton newBtn = new JButton("New Project");
+        newBtn.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        newBtn.addActionListener(e -> {
+            try {
+                Project project = org.freeeed.db.DbLocalUtils.createNewProject();
+                Project.setCurrentProject(project);
+                updateStatus();
+                showProcessingOptions();
+            } catch (Exception ex) {
+                LOGGER.severe("Problem creating new project: " + ex.getMessage());
+            }
+        });
+        panel.add(newBtn, gbc);
+
+        return panel;
     }
 
     private void exitApp() throws Exception {
@@ -602,7 +671,7 @@ public class FreeEedUI extends javax.swing.JFrame {
     public void openProject(File selectedFile) {
         Project project = Project.loadFromFile(selectedFile);
         project.setProjectFilePath(selectedFile.getPath());
-        updateTitle(project.getProjectCode() + " " + project.getProjectName());
+        updateStatus();
         LOGGER.finest("Opened project file: " + selectedFile.getPath());
         Settings settings = Settings.getSettings();
         settings.addRecentProject(selectedFile.getPath());
@@ -629,6 +698,27 @@ public class FreeEedUI extends javax.swing.JFrame {
         } else {
             setTitle(ParameterProcessing.APP_NAME + ParameterProcessing.TM);
         }
+    }
+
+    public void updateStatus() {
+        Project project = Project.getCurrentProject();
+        if (project == null || project.isEmpty()) {
+            statusLabel.setText("No project open.");
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        String name = project.getProjectName();
+        String code = project.getProjectCode();
+        if (code != null && !code.isEmpty()) {
+            sb.append(code);
+        }
+        if (name != null && !name.isEmpty()) {
+            if (sb.length() > 0) sb.append(" - ");
+            sb.append(name);
+        }
+        int inputCount = project.getInputs().length;
+        sb.append(" | ").append(inputCount).append(inputCount == 1 ? " input" : " inputs");
+        statusLabel.setText(sb.toString());
     }
 
     public void showProcessingOptions() {
