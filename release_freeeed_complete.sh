@@ -19,7 +19,7 @@ FREEEED_PROJECT=$PROJECT_DIR/FreeEed
 FREEEED_UI_PROJECT=$PROJECT_DIR/FreeEedUI
 PYTHON_DIR=$PROJECT_DIR/FreeEed/python 
 FEATURES_DIR=$SCAIA_HOME/FreeEed-features/releases
-VERSION=10.8.3-SNAPSHOT
+VERSION=10.8.4-SNAPSHOT
 echo "Building version "$VERSION
 
 #============================ user setup ==================================
