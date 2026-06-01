@@ -574,6 +574,21 @@ public class FreeEedUI extends javax.swing.JFrame {
      */
 
     private JPanel welcomePanel;
+    private static final Color STEP_COMPLETE = new Color(76, 175, 80);
+    private static final Color STEP_CURRENT = new Color(33, 150, 243);
+    private static final Color STEP_FUTURE = new Color(189, 189, 189);
+    private static final Color ARROW_COLOR = new Color(180, 180, 180);
+    private static final String[] STEP_LABELS = {"Project", "Data", "Process", "Review"};
+    private static final String[] STEP_DESCRIPTIONS = {
+            "Create or open a project",
+            "Add input files and custodians",
+            "Inventory, stage, and process files",
+            "Review processed results"
+    };
+    private JLabel[] stepCircles;
+    private JLabel[] stepLabels;
+    private JLabel[] arrowLabels;
+    private JLabel stepDescription;
 
     private void myInitComponents() {
         addWindowListener(new FrameListener());
@@ -596,12 +611,13 @@ public class FreeEedUI extends javax.swing.JFrame {
         bottomPanel.add(statusPanel);
         content.add(bottomPanel, BorderLayout.SOUTH);
 
-        // Center: welcome panel
+        // Center: welcome panel with stepper
         welcomePanel = createWelcomePanel();
         content.add(welcomePanel, BorderLayout.CENTER);
 
         content.revalidate();
         content.repaint();
+        refreshStepper();
     }
 
     private JPanel createWelcomePanel() {
@@ -610,7 +626,8 @@ public class FreeEedUI extends javax.swing.JFrame {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.insets = new Insets(5, 0, 15, 0);
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.insets = new Insets(15, 0, 5, 0);
 
         JLabel titleLabel = new JLabel("Welcome to FreeEed");
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
@@ -618,12 +635,28 @@ public class FreeEedUI extends javax.swing.JFrame {
         panel.add(titleLabel, gbc);
 
         gbc.gridy++;
-        gbc.insets = new Insets(5, 0, 20, 0);
+        gbc.insets = new Insets(2, 0, 25, 0);
         JLabel subtitleLabel = new JLabel("e-Discovery, Search, and AI Platform");
         subtitleLabel.setFont(new Font("SansSerif", Font.PLAIN, 13));
         subtitleLabel.setForeground(Color.GRAY);
         panel.add(subtitleLabel, gbc);
 
+        // Stepper row
+        gbc.gridy++;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.insets = new Insets(0, 0, 20, 0);
+        JPanel stepperRow = createStepperRow();
+        panel.add(stepperRow, gbc);
+
+        // Step description
+        gbc.gridy++;
+        gbc.insets = new Insets(0, 0, 20, 0);
+        stepDescription = new JLabel(" ");
+        stepDescription.setFont(new Font("SansSerif", Font.ITALIC, 13));
+        stepDescription.setForeground(Color.GRAY);
+        panel.add(stepDescription, gbc);
+
+        // Quick action buttons
         gbc.gridy++;
         gbc.insets = new Insets(5, 0, 5, 0);
         JButton openBtn = new JButton("Open Project");
@@ -632,6 +665,7 @@ public class FreeEedUI extends javax.swing.JFrame {
         panel.add(openBtn, gbc);
 
         gbc.gridy++;
+        gbc.insets = new Insets(3, 0, 5, 0);
         JButton newBtn = new JButton("New Project");
         newBtn.setFont(new Font("SansSerif", Font.PLAIN, 13));
         newBtn.addActionListener(e -> {
@@ -647,6 +681,157 @@ public class FreeEedUI extends javax.swing.JFrame {
         panel.add(newBtn, gbc);
 
         return panel;
+    }
+
+    private JPanel createStepperRow() {
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        row.setBackground(Color.WHITE);
+
+        stepCircles = new JLabel[4];
+        stepLabels = new JLabel[4];
+        arrowLabels = new JLabel[3];
+
+        Runnable[] actions = {
+                () -> openProject(),
+                () -> showProcessingOptions(),
+                () -> processProject(),
+                () -> {
+                    try { openOutputFolder(); } catch (IOException ex) {
+                        LOGGER.severe("Could not open folder");
+                    }
+                }
+        };
+
+        for (int i = 0; i < 4; i++) {
+            JPanel stepPanel = new JPanel();
+            stepPanel.setLayout(new BoxLayout(stepPanel, BoxLayout.Y_AXIS));
+            stepPanel.setBackground(Color.WHITE);
+            stepPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
+
+            // Circle with number
+            JLabel circle = new JLabel(String.valueOf(i + 1), SwingConstants.CENTER) {
+                @Override
+                public Dimension getPreferredSize() {
+                    return new Dimension(36, 36);
+                }
+                @Override
+                public Dimension getMinimumSize() {
+                    return getPreferredSize();
+                }
+                @Override
+                public Dimension getMaximumSize() {
+                    return getPreferredSize();
+                }
+                @Override
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(getBackground());
+                    g2.fillOval(0, 0, getWidth() - 1, getHeight() - 1);
+                    g2.dispose();
+                    super.paintComponent(g);
+                }
+            };
+            circle.setOpaque(false);
+            circle.setBackground(STEP_FUTURE);
+            circle.setForeground(Color.WHITE);
+            circle.setFont(new Font("SansSerif", Font.BOLD, 14));
+            circle.setHorizontalAlignment(SwingConstants.CENTER);
+            circle.setAlignmentX(Component.CENTER_ALIGNMENT);
+            stepCircles[i] = circle;
+
+            // Label below circle
+            JLabel label = new JLabel(STEP_LABELS[i]);
+            label.setFont(new Font("SansSerif", Font.PLAIN, 11));
+            label.setForeground(STEP_FUTURE);
+            label.setAlignmentX(Component.CENTER_ALIGNMENT);
+            stepLabels[i] = label;
+
+            stepPanel.add(Box.createVerticalGlue());
+            stepPanel.add(circle);
+            stepPanel.add(Box.createVerticalStrut(4));
+            stepPanel.add(label);
+            stepPanel.add(Box.createVerticalGlue());
+
+            // Make clickable
+            final int stepIndex = i;
+            final Runnable action = actions[i];
+            stepPanel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            stepPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override
+                public void mouseClicked(java.awt.event.MouseEvent e) {
+                    action.run();
+                }
+                @Override
+                public void mouseEntered(java.awt.event.MouseEvent e) {
+                    stepDescription.setText(STEP_DESCRIPTIONS[stepIndex]);
+                }
+                @Override
+                public void mouseExited(java.awt.event.MouseEvent e) {
+                    showCurrentStepDescription();
+                }
+            });
+
+            row.add(stepPanel);
+
+            // Arrow between steps
+            if (i < 3) {
+                JLabel arrow = new JLabel("  \u279C  ");
+                arrow.setFont(new Font("SansSerif", Font.PLAIN, 18));
+                arrow.setForeground(ARROW_COLOR);
+                arrowLabels[i] = arrow;
+                row.add(arrow);
+            }
+        }
+
+        return row;
+    }
+
+    private void showCurrentStepDescription() {
+        int current = getCurrentStep();
+        if (current < 4) {
+            stepDescription.setText(STEP_DESCRIPTIONS[current]);
+        } else {
+            stepDescription.setText("All steps complete!");
+        }
+    }
+
+    private int getCurrentStep() {
+        Project project = Project.getCurrentProject();
+        if (project == null || project.isEmpty()) return 0;
+        if (project.getInputs().length == 0) return 1;
+        String resultsDir = project.getResultsDir();
+        if (resultsDir == null) return 2;
+        File resultsFolder = new File(resultsDir);
+        if (!resultsFolder.exists() || resultsFolder.list() == null || resultsFolder.list().length == 0) return 2;
+        return 3;
+    }
+
+    public void refreshStepper() {
+        if (stepCircles == null) return;
+        int current = getCurrentStep();
+        for (int i = 0; i < 4; i++) {
+            Color color;
+            if (i < current) {
+                color = STEP_COMPLETE;
+                stepCircles[i].setText("\u2713"); // checkmark
+            } else if (i == current) {
+                color = STEP_CURRENT;
+                stepCircles[i].setText(String.valueOf(i + 1));
+            } else {
+                color = STEP_FUTURE;
+                stepCircles[i].setText(String.valueOf(i + 1));
+            }
+            stepCircles[i].setBackground(color);
+            stepLabels[i].setForeground(color);
+            stepLabels[i].setFont(new Font("SansSerif", i == current ? Font.BOLD : Font.PLAIN, 11));
+        }
+        // Color arrows between completed steps
+        for (int i = 0; i < 3; i++) {
+            arrowLabels[i].setForeground(i < current ? STEP_COMPLETE : ARROW_COLOR);
+        }
+        showCurrentStepDescription();
+        welcomePanel.repaint();
     }
 
     private void exitApp() throws Exception {
@@ -719,6 +904,7 @@ public class FreeEedUI extends javax.swing.JFrame {
         int inputCount = project.getInputs().length;
         sb.append(" | ").append(inputCount).append(inputCount == 1 ? " input" : " inputs");
         statusLabel.setText(sb.toString());
+        refreshStepper();
     }
 
     public void showProcessingOptions() {
