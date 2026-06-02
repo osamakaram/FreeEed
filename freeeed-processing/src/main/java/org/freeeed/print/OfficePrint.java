@@ -19,8 +19,12 @@ package org.freeeed.print;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -73,11 +77,18 @@ public class OfficePrint implements ComponentLifecycle {
 
         try {
             if ("html".equalsIgnoreCase(extension) || "htm".equalsIgnoreCase(extension)) {
+                // Strip external references up front so no renderer makes outbound
+                // network calls (forensic soundness; also avoids hangs when soffice
+                // imports saved web pages that reference remote/dead resources).
+                File htmlToRender = sanitizeHtmlForOfflineRender(officeDocFile);
+                if (htmlToRender == null) {
+                    htmlToRender = officeDocFile;
+                }
                 try {
-                    Html2Pdf.html2pdf(officeDocFile.getPath(), outputFile);
+                    Html2Pdf.html2pdf(htmlToRender.getPath(), outputFile);
                 } catch (Exception e) {
                     LOGGER.info("htmltopdf imaging not able to process file, trying OpenOffice imaging instead");
-                    convertToPdfWithSOffice(officeDocFile, outputFile);
+                    convertToPdfWithSOffice(htmlToRender, outputFile);
                 }
                 return;
             } else if ("pdf".equalsIgnoreCase(extension)) {
@@ -126,6 +137,61 @@ public class OfficePrint implements ComponentLifecycle {
         } catch (Exception e) {
             LOGGER.severe("Cannot convert eml file: " + e.getMessage());
             convertToPdfWithSOffice(file, outputPdf);
+        }
+    }
+
+    private static final String[] REMOTE_URL_ATTRS = {"src", "href", "background", "poster", "srcset", "data-src"};
+
+    /**
+     * Returns true if the URL points to a network location we must not fetch.
+     */
+    private static boolean isRemoteUrl(String url) {
+        if (url == null) {
+            return false;
+        }
+        String u = url.trim().toLowerCase();
+        return u.startsWith("http://") || u.startsWith("https://")
+                || u.startsWith("//") || u.startsWith("ftp://");
+    }
+
+    /**
+     * Produce an offline-safe copy of an HTML file by removing every external
+     * reference, so the PDF renderer never makes outbound network calls. This is
+     * required for forensic soundness (no phoning home / tracking pixels) and it
+     * also prevents soffice from hanging when a saved web page references remote
+     * or dead resources.
+     *
+     * @param htmlFile the original HTML file
+     * @return a sanitized HTML file alongside the original, or null on failure
+     */
+    private File sanitizeHtmlForOfflineRender(File htmlFile) {
+        try {
+            org.jsoup.nodes.Document doc = Jsoup.parse(htmlFile, null);
+            // Drop tags that only pull in remote content and add nothing to a static PDF.
+            doc.select("script, link, base, iframe, frame, object, embed").remove();
+            for (Element el : doc.getAllElements()) {
+                for (String attr : REMOTE_URL_ATTRS) {
+                    if (el.hasAttr(attr) && isRemoteUrl(el.attr(attr))) {
+                        el.removeAttr(attr);
+                    }
+                }
+                // Inline styles may pull in remote images via url(...).
+                if (el.hasAttr("style") && el.attr("style").toLowerCase().contains("url(")) {
+                    el.removeAttr("style");
+                }
+            }
+            // Neutralize remote url(...) in embedded <style> blocks (CSS background
+            // images), which the element loop above does not reach. Matches
+            // url(http:// | https:// | ftp:// | //...) but leaves local/relative urls.
+            String html = doc.outerHtml().replaceAll(
+                    "(?i)url\\(\\s*['\"]?\\s*(?:https?:|ftp:)?//[^)]*\\)", "none");
+            File sanitized = new File(htmlFile.getParentFile(),
+                    FilenameUtils.removeExtension(htmlFile.getName()) + "_offline.html");
+            FileUtils.writeStringToFile(sanitized, html, StandardCharsets.UTF_8);
+            return sanitized;
+        } catch (Exception e) {
+            LOGGER.warning("Could not sanitize HTML for offline rendering: " + e.getMessage());
+            return null;
         }
     }
 
