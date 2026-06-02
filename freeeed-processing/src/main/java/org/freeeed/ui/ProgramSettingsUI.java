@@ -253,7 +253,7 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
 
         jLabel4.setText("Review URL");
 
-        jLabel5.setText("e.g. http://localhost:8080");
+        jLabel5.setText("e.g. http://localhost:8080/freeeedui");
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
