@@ -697,11 +697,7 @@ public class FreeEedUI extends javax.swing.JFrame {
                 () -> inventoryProject(),
                 () -> stageProject(),
                 () -> processProject(),
-                () -> {
-                    try { openOutputFolder(); } catch (IOException ex) {
-                        LOGGER.severe("Could not open folder");
-                    }
-                }
+                () -> openReviewUI()
         };
 
         for (int i = 0; i < 5; i++) {
