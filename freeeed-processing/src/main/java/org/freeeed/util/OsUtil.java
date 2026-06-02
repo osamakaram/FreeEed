@@ -202,8 +202,15 @@ public class OsUtil {
         Process p = Runtime.getRuntime().exec(command);
         try {
             if (!p.waitFor(timeout, TimeUnit.SECONDS)) {
-                p.destroy();
-                throw new IOException("Process timed out");
+                // Forcibly kill the whole process tree, not just the parent. Wrapper
+                // launchers (e.g. the soffice script spawning soffice.bin) leave the
+                // real worker orphaned and still running if we only destroy the parent.
+                // descendants() is evaluated while the parent is still alive so the
+                // child handles are captured before we kill it.
+                p.descendants().forEach(ProcessHandle::destroyForcibly);
+                p.destroyForcibly();
+                p.waitFor(5, TimeUnit.SECONDS);
+                throw new IOException("Process timed out after " + timeout + " seconds: " + command);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
