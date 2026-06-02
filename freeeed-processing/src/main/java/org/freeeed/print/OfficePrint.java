@@ -143,7 +143,12 @@ public class OfficePrint implements ComponentLifecycle {
 
         // passing unsupported extension causes soffice to freeze, need to review which extensions are supported.
         if (SUPPORTED_EXTENSIONS.indexOf(extension) >= 0) {
+            // Use a per-invocation user profile so a shared/locked default profile
+            // (from a GUI instance, the startup system check, or a prior run) cannot
+            // make headless --convert-to hang on the profile lock.
+            String profileDir = new File(outputFile.getParentFile(), ".soffice_profile").getAbsolutePath();
             String fullCommand = OsUtil.getSOfficeExecutableLocation() + " --headless "
+                    + " -env:UserInstallation=file://" + profileDir
                     + " --convert-to pdf:writer_pdf_Export " + inputFile.getAbsolutePath()
                     + " --outdir " + outputFile.getParentFile().getAbsolutePath();
             try {
