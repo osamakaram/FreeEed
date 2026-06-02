@@ -578,11 +578,12 @@ public class FreeEedUI extends javax.swing.JFrame {
     private static final Color STEP_CURRENT = new Color(33, 150, 243);
     private static final Color STEP_FUTURE = new Color(189, 189, 189);
     private static final Color ARROW_COLOR = new Color(180, 180, 180);
-    private static final String[] STEP_LABELS = {"Project", "Data", "Process", "Review"};
+    private static final String[] STEP_LABELS = {"Project", "Inventory", "Stage", "Process", "Review"};
     private static final String[] STEP_DESCRIPTIONS = {
-            "Create or open a project",
-            "Add input files and custodians",
-            "Inventory, stage, and process files",
+            "Create or open a project and add data",
+            "Inventory input files",
+            "Stage files for processing",
+            "Process staged files",
             "Review processed results"
     };
     private JLabel[] stepCircles;
@@ -687,13 +688,14 @@ public class FreeEedUI extends javax.swing.JFrame {
         JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
         row.setBackground(Color.WHITE);
 
-        stepCircles = new JLabel[4];
-        stepLabels = new JLabel[4];
-        arrowLabels = new JLabel[3];
+        stepCircles = new JLabel[5];
+        stepLabels = new JLabel[5];
+        arrowLabels = new JLabel[4];
 
         Runnable[] actions = {
                 () -> openProject(),
-                () -> showProcessingOptions(),
+                () -> inventoryProject(),
+                () -> stageProject(),
                 () -> processProject(),
                 () -> {
                     try { openOutputFolder(); } catch (IOException ex) {
@@ -702,7 +704,7 @@ public class FreeEedUI extends javax.swing.JFrame {
                 }
         };
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 5; i++) {
             JPanel stepPanel = new JPanel();
             stepPanel.setLayout(new BoxLayout(stepPanel, BoxLayout.Y_AXIS));
             stepPanel.setBackground(Color.WHITE);
@@ -775,7 +777,7 @@ public class FreeEedUI extends javax.swing.JFrame {
             row.add(stepPanel);
 
             // Arrow between steps
-            if (i < 3) {
+            if (i < 4) {
                 JLabel arrow = new JLabel("  \u279C  ");
                 arrow.setFont(new Font("SansSerif", Font.PLAIN, 18));
                 arrow.setForeground(ARROW_COLOR);
@@ -789,7 +791,7 @@ public class FreeEedUI extends javax.swing.JFrame {
 
     private void showCurrentStepDescription() {
         int current = getCurrentStep();
-        if (current < 4) {
+        if (current < 5) {
             stepDescription.setText(STEP_DESCRIPTIONS[current]);
         } else {
             stepDescription.setText("All steps complete!");
@@ -799,18 +801,25 @@ public class FreeEedUI extends javax.swing.JFrame {
     private int getCurrentStep() {
         Project project = Project.getCurrentProject();
         if (project == null || project.isEmpty()) return 0;
-        if (project.getInputs().length == 0) return 1;
+        if (project.getInputs().length == 0) return 0;
+        // Check inventory
+        File inventoryFile = new File(project.getInventoryFileName());
+        if (!inventoryFile.exists()) return 1;
+        // Check staging
+        File stagingDir = new File(project.getStagingDir());
+        if (!stagingDir.exists() || stagingDir.list() == null || stagingDir.list().length <= 1) return 2;
+        // Check results
         String resultsDir = project.getResultsDir();
-        if (resultsDir == null) return 2;
+        if (resultsDir == null) return 3;
         File resultsFolder = new File(resultsDir);
-        if (!resultsFolder.exists() || resultsFolder.list() == null || resultsFolder.list().length == 0) return 2;
-        return 3;
+        if (!resultsFolder.exists() || resultsFolder.list() == null || resultsFolder.list().length == 0) return 3;
+        return 4;
     }
 
     public void refreshStepper() {
         if (stepCircles == null) return;
         int current = getCurrentStep();
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 5; i++) {
             Color color;
             if (i < current) {
                 color = STEP_COMPLETE;
@@ -827,7 +836,7 @@ public class FreeEedUI extends javax.swing.JFrame {
             stepLabels[i].setFont(new Font("SansSerif", i == current ? Font.BOLD : Font.PLAIN, 11));
         }
         // Color arrows between completed steps
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 4; i++) {
             arrowLabels[i].setForeground(i < current ? STEP_COMPLETE : ARROW_COLOR);
         }
         showCurrentStepDescription();
