@@ -1471,6 +1471,6 @@ public class FreeEedUI extends javax.swing.JFrame {
         } catch (Exception e) {
             LOGGER.severe("Error staging project");
         }
-
+        refreshStepper();
     }
 }

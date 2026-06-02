@@ -281,6 +281,7 @@ public class StagingProgressUI extends javax.swing.JDialog {
                 stagingFinished = true;
                 okButton.setEnabled(true);
                 progressBar.setValue(100);
+                FreeEedUI.getInstance().refreshStepper();
                 if (Settings.getSettings().isStraightThroughProcessing()) {
                     
                     String runWhere = "local";

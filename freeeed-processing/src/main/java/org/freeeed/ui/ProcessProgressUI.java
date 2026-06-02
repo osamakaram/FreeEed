@@ -248,6 +248,7 @@ public class ProcessProgressUI extends javax.swing.JDialog {
             progressBar.setValue(100);
             processingFinished = true;
             okButton.setEnabled(true);
+            FreeEedUI.getInstance().refreshStepper();
         });
 
     }
