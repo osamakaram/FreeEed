@@ -173,6 +173,17 @@ public class ParameterProcessing {
     public static String EDITION_REMEMBER = "edition_remember";
     public static String EDITION_SELECTED = "edition_selected";
 
+    // User registration (free, identification only - not licensing) and support
+    public static String USER_NAME = "user-name";
+    public static String USER_COMPANY = "user-company";
+    public static String USER_EMAIL = "user-email";
+    // "" = not asked yet (re-prompt), "registered" = done, "declined" = never ask again
+    public static String USER_REGISTRATION_STATUS = "user-registration-status";
+    public static final String REGISTRATION_REGISTERED = "registered";
+    public static final String REGISTRATION_DECLINED = "declined";
+    // Where registration details and feedback are sent
+    public static final String SUPPORT_EMAIL = "mark@scaia.ai";
+
     public static String TRANSCRIBE = "transcribe";
     // TODO modify according to requirements
     public static DecimalFormat UPIFormat = new DecimalFormat("UPI_00000");

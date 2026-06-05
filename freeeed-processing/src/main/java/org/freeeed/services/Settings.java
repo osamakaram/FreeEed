@@ -649,4 +649,56 @@ public class Settings extends Properties {
         }
         setProperty(org.freeeed.main.ParameterProcessing.EDITION_SELECTED, edition);
     }
+
+    // --- User registration (free identification, not licensing) -------------
+
+    public String getUserName() {
+        return getProperty(ParameterProcessing.USER_NAME);
+    }
+
+    public void setUserName(String userName) {
+        setProperty(ParameterProcessing.USER_NAME, userName == null ? "" : userName);
+    }
+
+    public String getUserCompany() {
+        return getProperty(ParameterProcessing.USER_COMPANY);
+    }
+
+    public void setUserCompany(String userCompany) {
+        setProperty(ParameterProcessing.USER_COMPANY, userCompany == null ? "" : userCompany);
+    }
+
+    public String getUserEmail() {
+        return getProperty(ParameterProcessing.USER_EMAIL);
+    }
+
+    public void setUserEmail(String userEmail) {
+        setProperty(ParameterProcessing.USER_EMAIL, userEmail == null ? "" : userEmail);
+    }
+
+    public String getRegistrationStatus() {
+        return getProperty(ParameterProcessing.USER_REGISTRATION_STATUS);
+    }
+
+    public void setRegistrationStatus(String status) {
+        setProperty(ParameterProcessing.USER_REGISTRATION_STATUS, status == null ? "" : status);
+    }
+
+    public boolean isRegistered() {
+        return ParameterProcessing.REGISTRATION_REGISTERED.equals(getRegistrationStatus());
+    }
+
+    public boolean isRegistrationDeclined() {
+        return ParameterProcessing.REGISTRATION_DECLINED.equals(getRegistrationStatus());
+    }
+
+    /**
+     * Soft-required registration: keep prompting on each launch until the user
+     * either registers or explicitly declines. Never a hard gate.
+     *
+     * @return true if the registration dialog should be shown this launch.
+     */
+    public boolean needsRegistrationPrompt() {
+        return !isRegistered() && !isRegistrationDeclined();
+    }
 }

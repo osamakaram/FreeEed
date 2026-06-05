@@ -128,6 +128,7 @@ public class FreeEedUI extends javax.swing.JFrame {
         manualMenuItem = new javax.swing.JMenuItem();
         changelogMenuItem = new javax.swing.JMenuItem();
         licenseMenuItem = new javax.swing.JMenuItem();
+        feedbackMenuItem = new javax.swing.JMenuItem();
         aboutMenuItem = new javax.swing.JMenuItem();
 
         javax.swing.GroupLayout panel1Layout = new javax.swing.GroupLayout(panel1);
@@ -324,6 +325,14 @@ public class FreeEedUI extends javax.swing.JFrame {
         });
         helpMenu.add(licenseMenuItem);
 
+        feedbackMenuItem.setText("Send Feedback / Request Support...");
+        feedbackMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                feedbackMenuItemActionPerformed(evt);
+            }
+        });
+        helpMenu.add(feedbackMenuItem);
+
         aboutMenuItem.setText("About");
         aboutMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -365,6 +374,10 @@ public class FreeEedUI extends javax.swing.JFrame {
     private void aboutMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_aboutMenuItemActionPerformed
         new AboutDialog(this, true).setVisible(true);
     }//GEN-LAST:event_aboutMenuItemActionPerformed
+
+    private void feedbackMenuItemActionPerformed(java.awt.event.ActionEvent evt) {
+        new FeedbackDialog(this, true).setVisible(true);
+    }
 
     private void manualMenuItemActionPerformed(java.awt.event.ActionEvent evt) {
         UtilUI.openBrowser(FreeEedUI.getInstance(), "https://github.com/shmsoft/FreeEed/wiki");
@@ -469,6 +482,9 @@ public class FreeEedUI extends javax.swing.JFrame {
             FreeEedUI ui = new FreeEedUI();
             ui.setInstance(ui);
             ui.setVisible(true);
+            // Soft-required, free registration: prompts over the running app until
+            // the user registers or declines. Never blocks startup (issue #549).
+            UserRegistrationDialog.promptIfNeeded(ui);
         });
     }
 
@@ -533,6 +549,7 @@ public class FreeEedUI extends javax.swing.JFrame {
     private javax.swing.JMenuItem changelogMenuItem;
     private javax.swing.JMenu editMenu;
     private javax.swing.JMenu fileMenu;
+    private javax.swing.JMenuItem feedbackMenuItem;
     private javax.swing.JMenu helpMenu;
     private javax.swing.JMenuItem historyMenuItem;
     private javax.swing.JSeparator jSeparator1;
