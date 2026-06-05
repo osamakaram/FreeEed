@@ -177,10 +177,13 @@ public class ParameterProcessing {
     public static String USER_NAME = "user-name";
     public static String USER_COMPANY = "user-company";
     public static String USER_EMAIL = "user-email";
+    public static String USER_PROJECT = "user-project";
     // "" = not asked yet (re-prompt), "registered" = done, "declined" = never ask again
     public static String USER_REGISTRATION_STATUS = "user-registration-status";
     public static final String REGISTRATION_REGISTERED = "registered";
     public static final String REGISTRATION_DECLINED = "declined";
+    // Free activation key the user enters after we reply to their registration email
+    public static String USER_ACTIVATION_KEY = "user-activation-key";
     // Where registration details and feedback are sent
     public static final String SUPPORT_EMAIL = "mark@scaia.ai";
 

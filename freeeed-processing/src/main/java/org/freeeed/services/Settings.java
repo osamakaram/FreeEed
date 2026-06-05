@@ -676,6 +676,14 @@ public class Settings extends Properties {
         setProperty(ParameterProcessing.USER_EMAIL, userEmail == null ? "" : userEmail);
     }
 
+    public String getUserProject() {
+        return getProperty(ParameterProcessing.USER_PROJECT);
+    }
+
+    public void setUserProject(String userProject) {
+        setProperty(ParameterProcessing.USER_PROJECT, userProject == null ? "" : userProject);
+    }
+
     public String getRegistrationStatus() {
         return getProperty(ParameterProcessing.USER_REGISTRATION_STATUS);
     }
@@ -692,13 +700,22 @@ public class Settings extends Properties {
         return ParameterProcessing.REGISTRATION_DECLINED.equals(getRegistrationStatus());
     }
 
+    public String getActivationKey() {
+        return getProperty(ParameterProcessing.USER_ACTIVATION_KEY);
+    }
+
+    public void setActivationKey(String key) {
+        setProperty(ParameterProcessing.USER_ACTIVATION_KEY, key == null ? "" : key);
+    }
+
     /**
-     * Soft-required registration: keep prompting on each launch until the user
-     * either registers or explicitly declines. Never a hard gate.
+     * The app is activated only if a stored key validates against the stored
+     * email. Re-validating (rather than trusting a flag) means simply editing
+     * the database can't fake activation without a real key.
      *
-     * @return true if the registration dialog should be shown this launch.
+     * @return true if this install has a valid free activation key.
      */
-    public boolean needsRegistrationPrompt() {
-        return !isRegistered() && !isRegistrationDeclined();
+    public boolean isActivated() {
+        return Activation.isValid(getUserEmail(), getActivationKey());
     }
 }

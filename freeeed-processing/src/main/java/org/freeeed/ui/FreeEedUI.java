@@ -479,12 +479,14 @@ public class FreeEedUI extends javax.swing.JFrame {
             if (!shouldProceedAfterEditionDialog()) {
                 return; // user cancelled
             }
+            // Free activation gate: every user registers (it's free) so we can
+            // stay in touch. Blocks until activated; quitting exits (issue #549).
+            if (!UserRegistrationDialog.ensureActivated(null)) {
+                return;
+            }
             FreeEedUI ui = new FreeEedUI();
             ui.setInstance(ui);
             ui.setVisible(true);
-            // Soft-required, free registration: prompts over the running app until
-            // the user registers or declines. Never blocks startup (issue #549).
-            UserRegistrationDialog.promptIfNeeded(ui);
         });
     }
 
