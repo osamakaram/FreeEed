@@ -17,37 +17,37 @@
 package org.freeeed.services;
 
 import java.nio.charset.StandardCharsets;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 /**
- * Free, per-user activation keys.
+ * Free, per-user activation - verification only.
  *
- * A user registers by emailing us (from the in-app dialog). We reply by hand
- * with the key produced for their email; they type it back into the app to
- * activate. The key is verified entirely offline - no server needed - because
- * it is a deterministic HMAC of the (normalized) email under a shared secret.
+ * A user registers by emailing us (from the in-app dialog). We reply with the
+ * activation key produced for their email; they paste it back into the app to
+ * activate. The key is an Ed25519 signature over the (normalized) email, so it
+ * is verified entirely offline - no server needed.
  *
- * This is FREE registration, not payment: the key costs nothing and unlocks the
- * same software for everyone. Its only purpose is to make sure every user has
- * exchanged an email with us, so we can keep in touch (FreeEed issue #549).
+ * This class holds ONLY the PUBLIC key, so the open-source app can verify a key
+ * but can never create one. The private signing key lives only in our private
+ * AI Advisor repo (scripts/freeeed_activation.py); it never ships here. To mint
+ * a key when replying to a user, run there:
+ *   python scripts/freeeed_activation.py user@example.com
  *
- * Note: because the secret below ships in the open-source build, a determined
- * user could derive their own key from the source. That is acceptable - the
- * point is the email handshake, not copy protection. If we ever want truly
- * unforgeable keys we would switch to an asymmetric signature (public key in
- * the app, private key held only by us).
- *
- * To generate a key when replying to a user, run:
- *   java -cp freeeed-processing-...-jar-with-dependencies.jar \
- *        org.freeeed.services.Activation user@example.com
+ * The key is free and unlocks the same software for everyone - its only purpose
+ * is to make sure every user has exchanged an email with us (FreeEed issue #549).
  *
  * @author mark
  */
 public final class Activation {
 
-    // Shared secret used to derive keys. Free-registration speed bump, not DRM.
-    private static final String SECRET = "FreeEed-activation-2026-9Qz7Kx2Tn5Rb";
+    // Ed25519 public key (X.509 SubjectPublicKeyInfo, base64). Verify-only.
+    // The matching private key is kept off this repo (AI Advisor).
+    private static final String PUBLIC_KEY_B64 =
+            "MCowBQYDK2VwAyEAUnWK8a5xlj+1FYvZAXmwujgyEyb1iOetYjwJnYBaeEQ=";
 
     private Activation() {
     }
@@ -58,67 +58,35 @@ public final class Activation {
     }
 
     /**
-     * Generate the activation key for an email, e.g. "FE-1A2B-3C4D-5E6F".
-     *
-     * @param email the user's email address
-     * @return formatted activation key, or "" if the email is blank
-     */
-    public static String generateKey(String email) {
-        String normalized = normalizeEmail(email);
-        if (normalized.isEmpty()) {
-            return "";
-        }
-        String hex = hmacSha256Hex(SECRET, normalized).toUpperCase();
-        String body = hex.substring(0, 12);
-        return "FE-" + body.substring(0, 4) + "-" + body.substring(4, 8) + "-" + body.substring(8, 12);
-    }
-
-    /**
-     * Validate a key the user typed against their email. Dashes, spaces and case
-     * are ignored, so "fe1a2b3c4d5e6f" and "FE-1A2B-3C4D-5E6F" both pass.
+     * Validate a key the user pasted against their email. The key is a URL-safe
+     * base64 Ed25519 signature over the normalized email; surrounding whitespace
+     * is ignored.
      *
      * @param email the email the user registered with
-     * @param enteredKey the key the user typed
-     * @return true if the key matches the email
+     * @param enteredKey the activation key the user pasted
+     * @return true if the key is a valid signature for the email
      */
     public static boolean isValid(String email, String enteredKey) {
-        if (enteredKey == null) {
+        String normalized = normalizeEmail(email);
+        if (normalized.isEmpty() || enteredKey == null) {
             return false;
         }
-        String expected = canonical(generateKey(email));
-        String actual = canonical(enteredKey);
-        return !expected.isEmpty() && expected.equals(actual);
-    }
-
-    private static String canonical(String key) {
-        return key == null ? "" : key.replaceAll("[^A-Za-z0-9]", "").toUpperCase();
-    }
-
-    private static String hmacSha256Hex(String secret, String message) {
         try {
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            byte[] raw = mac.doFinal(message.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hex = new StringBuilder(raw.length * 2);
-            for (byte b : raw) {
-                hex.append(Character.forDigit((b >> 4) & 0xF, 16));
-                hex.append(Character.forDigit(b & 0xF, 16));
-            }
-            return hex.toString();
+            byte[] signature = Base64.getUrlDecoder().decode(stripWhitespace(enteredKey));
+            byte[] spki = Base64.getDecoder().decode(PUBLIC_KEY_B64);
+            PublicKey publicKey = KeyFactory.getInstance("Ed25519")
+                    .generatePublic(new X509EncodedKeySpec(spki));
+            Signature verifier = Signature.getInstance("Ed25519");
+            verifier.initVerify(publicKey);
+            verifier.update(normalized.getBytes(StandardCharsets.UTF_8));
+            return verifier.verify(signature);
         } catch (Exception e) {
-            // HmacSHA256 is guaranteed present on every JVM; this should never happen.
-            throw new IllegalStateException("Could not compute activation key", e);
+            // Malformed key, wrong length, unknown algorithm, etc. - treat as invalid.
+            return false;
         }
     }
 
-    /** Key generator for manual replies: prints the key for the given email(s). */
-    public static void main(String[] args) {
-        if (args.length == 0) {
-            System.out.println("Usage: Activation <email> [<email> ...]");
-            return;
-        }
-        for (String email : args) {
-            System.out.println(email + "\t" + generateKey(email));
-        }
+    private static String stripWhitespace(String s) {
+        return s.replaceAll("\\s", "");
     }
 }
