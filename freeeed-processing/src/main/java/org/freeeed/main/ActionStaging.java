@@ -155,8 +155,12 @@ public class ActionStaging implements Runnable {
         }
         else
         {
-            for (String input : dirs) {
-                Set<String> files = FolderProcessor.listFiles(input);
+            for (int i = 0; i < dirs.length; ++i) {
+                // Catalog only the directories the user selected (Active).
+                if (i >= active.length || !active[i].equalsIgnoreCase("y")) {
+                    continue;
+                }
+                Set<String> files = FolderProcessor.listFiles(dirs[i].trim());
                 for (String file : files) {
                     Project.getCurrentProject().getSummaryMap().addToSummaryMap(new File(file));
                 }
@@ -316,9 +320,15 @@ public class ActionStaging implements Runnable {
     public void recursivelyCountFilesInDirectories() throws IOException {
         Project project = Project.getCurrentProject();
         String[] dirs = project.getInputs();
+        String[] active = project.getDirsActive(dirs);
         totalSize = 0;
-        for (String dir : dirs) {
-            Path path = Paths.get(dir);
+        for (int i = 0; i < dirs.length; ++i) {
+            // Count only the directories the user selected (Active), so the
+            // catalog/total matches what staging actually packages.
+            if (i >= active.length || !active[i].equalsIgnoreCase("y")) {
+                continue;
+            }
+            Path path = Paths.get(dirs[i]);
             if (Files.exists(path)) {
                 if (Files.isDirectory(path)) {
                     // TODO check for efficiency

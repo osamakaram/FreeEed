@@ -33,6 +33,7 @@ import org.freeeed.db.DbLocalUtils;
 import org.freeeed.main.ActionStaging;
 import org.freeeed.services.Project;
 import org.freeeed.services.Settings;
+import org.freeeed.services.SummaryMap;
 import org.freeeed.util.LogFactory;
 import org.freeeed.util.OsUtil;
 
@@ -1436,11 +1437,29 @@ public class ProjectUI extends javax.swing.JDialog {
             custodians[i] = (String) tableModel.getValueAt(i, 1);
             actives[i] = (boolean) tableModel.getValueAt(i, 2);
         }
+
+        // If the inputs or the Active selection changed, any previously staged
+        // catalog is now stale (it may list files from directories the user just
+        // unselected). Clear it so the inventory reflects only the current
+        // selection after the next Stage.
+        String[] oldInputs = project.getInputs();
+        String[] oldActive = project.getDirsActive(oldInputs);
+        String[] newActive = new String[actives.length];
+        for (int i = 0; i < actives.length; ++i) {
+            newActive[i] = actives[i] ? "y" : "N";
+        }
+        boolean selectionChanged = !Arrays.equals(dirs, oldInputs)
+                || !Arrays.equals(newActive, oldActive);
+
         project.setInputs(dirs);
         project.setCustodians(custodians);
         project.setDirsActive(actives);
         project.setEnvironment("local");
         project.setCulling(cullingText.getText());
+
+        if (selectionChanged) {
+            project.setSummaryMap(new SummaryMap());
+        }
         return true;
     }
 

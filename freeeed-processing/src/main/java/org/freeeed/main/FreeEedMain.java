@@ -218,8 +218,15 @@ public class FreeEedMain {
         project.getSummaryMap().startTimer();
 
         String[] inputs = project.getInputs();
+        String[] active = project.getDirsActive(inputs);
         if (inputs != null) {
-            for (String input : inputs) {
+            for (int i = 0; i < inputs.length; ++i) {
+                // Inventory only the directories the user selected (Active),
+                // so the catalog matches what staging will actually process.
+                if (i >= active.length || !active[i].equalsIgnoreCase("y")) {
+                    continue;
+                }
+                String input = inputs[i];
                 if (input == null || input.trim().isEmpty()) {
                     continue;
                 }
