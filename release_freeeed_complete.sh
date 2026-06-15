@@ -3,11 +3,6 @@
 # There, run this script, giving its complete path.
 # The release will create its own directory, as shown by `VersionNumber.txt` below
 
-if [ -z "${ZIP_PASS}" ]; then
-  echo Zip password not set
-  exit
-fi
-
 if [ -z "${SHMSOFT_HOME}" ]; then
   echo SHMSoft_HOME not set
   exit
@@ -78,7 +73,7 @@ if [ "$BUILD_FREEEED_PLAYER" == true ]; then
   cd $CURR_DIR/tmp || exit
 
   echo "FreeEed: Creating zip file"
-  zip -P $ZIP_PASS -r FreeEed-$VERSION.zip FreeEed
+  zip -r FreeEed-$VERSION.zip FreeEed
   cd $CURR_DIR || exit
   mv tmp/FreeEed-$VERSION.zip .
 
@@ -172,7 +167,7 @@ if [ "$BUILD_FREEEED_PACK" == true ]; then
 
     cd $CURR_DIR || exit
     mv tmp freeeed_complete_pack
-    zip -P $ZIP_PASS -r freeeed_complete_pack-$VERSION.zip freeeed_complete_pack
+    zip -r freeeed_complete_pack-$VERSION.zip freeeed_complete_pack
 
     echo "Done -- `ls -la freeeed_complete*.zip`"
 
