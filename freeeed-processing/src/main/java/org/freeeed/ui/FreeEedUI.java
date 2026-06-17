@@ -1481,11 +1481,27 @@ public class FreeEedUI extends javax.swing.JFrame {
                 return;
             }
         }
-        try {
-            FreeEedMain.getInstance().runInventoryInput();
-        } catch (Exception e) {
-            LOGGER.severe("Error staging project");
-        }
-        refreshStepper();
+        // Inventory walks every active input directory, which can be slow. Run it
+        // off the Event Dispatch Thread so the UI stays responsive instead of
+        // freezing ("works but hangs") until the walk completes.
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                FreeEedMain.getInstance().runInventoryInput();
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                setCursor(Cursor.getDefaultCursor());
+                try {
+                    get();
+                } catch (Exception e) {
+                    LOGGER.severe("Error building inventory: " + e.getMessage());
+                }
+                refreshStepper();
+            }
+        }.execute();
     }
 }
