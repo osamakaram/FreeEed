@@ -82,6 +82,19 @@ Capabilities include:
 
 FreeEed becomes the governed data layer that prepares information for AI systems.
 
+## The FreeEed Viewer
+
+A portable, offline embodiment of the vision: hand someone a finished production and let them work with it directly — no install, no servers, nothing leaving their machine.
+
+Four capabilities:
+
+* **Search** — find anything in the production, offline.
+* **Review** — read and navigate documents.
+* **Notes** — capture findings that travel back to the case.
+* **AI Case Chat** — ask questions of the case and get grounded, cited answers.
+
+The Viewer carries the product principles into a single tool: **Open** and **Affordable** (free, runs from a thumb drive), **Transparent** and human-in-the-loop (AI surfaces and explains; the user decides), and **Practical** (review where the work happens — courtroom, field, agency). To stay forensically sound, AI Case Chat runs against the bundled production with a local model — no outbound calls.
+
 ## Human-in-the-Loop AI
 
 FreeEed does not seek to replace attorneys, investigators, compliance professionals, or reviewers.
