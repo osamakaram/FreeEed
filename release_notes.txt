@@ -1,3 +1,19 @@
+10.8.4 (June 2026)
+New:
+* Free user registration and activation, so we can reach users with fixes and support (issue #549)
+    - Unforgeable, verify-only Ed25519 activation key in the open-source build
+    - Registration and feedback go through the user's own email client (nothing sent silently)
+* Documented standard ESI production format (Concordance .DAT + Opticon .OPT, Bates, families, redactions)
+
+Improvements and fixes:
+* Inventory no longer freezes the UI - the file walk now runs off the Event Dispatch Thread
+* Catalog only the selected (Active) directories, so the inventory matches what staging will process
+* Stepper "Review" step opens the review UI instead of the output folder
+* More reliable document conversion: fixed several LibreOffice/soffice headless hangs
+    (duplicated --convert-to argument, isolated user profile, offline HTML sanitizing)
+    and kill the whole process tree on command timeout
+* Release build produces unencrypted zips (removed the zip password lock)
+
 9.0.0 (Dec. 2021)
 *
 
