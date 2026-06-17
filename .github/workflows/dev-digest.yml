@@ -1,0 +1,55 @@
+name: Dev daily digest (all repos)
+
+# Emails a single daily summary of new commits on the dev branch across all
+# three projects (FreeEed, FreeEedUI, AI Advisor). Skips days with no changes.
+# Runs from this repo only (its default branch is dev), so no workflow files
+# are needed on the other repos' main branches.
+on:
+  schedule:
+    - cron: '0 13 * * *'   # 13:00 UTC daily
+  workflow_dispatch:
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    env:
+      # PAT with read access (contents:read) to all three repos across both orgs.
+      GH_TOKEN: ${{ secrets.DIGEST_TOKEN }}
+    steps:
+      - id: build
+        run: |
+          SINCE=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+          REPOS="shmsoft/FreeEed shmsoft/FreeEedUI Scaia-ai/ai_advisor"
+          BODY=""
+          ANY=""
+          for R in $REPOS; do
+            C=$(gh api "repos/$R/commits?sha=dev&since=$SINCE" \
+                 --jq '.[] | "- \(.sha[0:7]) \(.commit.message | split("\n")[0]) (\(.commit.author.name))"' 2>/dev/null || true)
+            if [ -n "$C" ]; then
+              ANY=1
+              BODY="${BODY}${R} (dev):\n${C}\nhttps://github.com/${R}/commits/dev\n\n"
+            fi
+          done
+          if [ -z "$ANY" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "No new dev commits across the three repos in the last 24h; skipping email."
+            exit 0
+          fi
+          {
+            echo "body<<DIGEST_EOF"
+            printf "%b" "Changes on dev in the last 24h:\n\n${BODY}"
+            echo "DIGEST_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - if: steps.build.outputs.skip != 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          secure: true
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "FreeEed dev changes - daily digest"
+          to: ashish@scaia.ai
+          from: FreeEed CI <${{ secrets.SMTP_USERNAME }}>
+          body: ${{ steps.build.outputs.body }}
