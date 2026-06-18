@@ -91,7 +91,7 @@ Four capabilities:
 * **Search** — find anything in the production, offline.
 * **Review** — read and navigate documents.
 * **Notes** — capture findings that travel back to the case.
-* **AI Case Chat** — ask questions of the case and get grounded, cited answers.
+* **AI Case Chat** — ask questions of the case and get grounded, cited answers ([#558](https://github.com/shmsoft/FreeEed/issues/558)).
 
 The Viewer carries the product principles into a single tool: **Open** and **Affordable** (free, runs from a thumb drive), **Transparent** and human-in-the-loop (AI surfaces and explains; the user decides), and **Practical** (review where the work happens — courtroom, field, agency). To stay forensically sound, AI Case Chat runs against the bundled production with a local model — no outbound calls.
 
