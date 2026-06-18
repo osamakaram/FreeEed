@@ -45,6 +45,8 @@ import java.util.logging.Logger;
 public class FreeEedUI extends javax.swing.JFrame {
 
     private final static Logger LOGGER = LogFactory.getLogger(FreeEedUI.class.getName());
+    private static final long FREE_OUTPUT_UPGRADE_PROMPT_STEP_BYTES = 200L * 1024L * 1024L;
+    private static final long FREE_STORAGE_LIMIT_BYTES = 50L * 1024L * 1024L * 1024L;
     public static String defaultTitle = ParameterProcessing.APP_NAME + ParameterProcessing.TM
             + " v" + Version.getVersionNumber() + " - e-Discovery, Search, and AI Platform";
 
@@ -582,8 +584,11 @@ public class FreeEedUI extends javax.swing.JFrame {
     @Override
     public void setVisible(boolean b) {
         if (b) {
+            enforceOutputDirForFreeUsers();
             myInitComponents();
             applyEditionFeatureGates();
+            checkOutputDirGrowthForFreeUsers();
+            refreshStorageUsageIndicators();
         }
         super.setVisible(b);
     }
@@ -609,6 +614,8 @@ public class FreeEedUI extends javax.swing.JFrame {
     private JLabel[] stepLabels;
     private JLabel[] arrowLabels;
     private JLabel stepDescription;
+    private JLabel storageUsageLabel;
+    private JLabel storageBannerLabel;
 
     private void myInitComponents() {
         addWindowListener(new FrameListener());
@@ -628,6 +635,11 @@ public class FreeEedUI extends javax.swing.JFrame {
         bottomPanel.add(jSeparator1);
         JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
         statusPanel.add(statusLabel);
+        storageUsageLabel = new JLabel();
+        storageUsageLabel.setForeground(new Color(33, 150, 243));
+        storageUsageLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
+        statusPanel.add(new JLabel(" | "));
+        statusPanel.add(storageUsageLabel);
         bottomPanel.add(statusPanel);
         content.add(bottomPanel, BorderLayout.SOUTH);
 
@@ -638,6 +650,7 @@ public class FreeEedUI extends javax.swing.JFrame {
         content.revalidate();
         content.repaint();
         refreshStepper();
+        refreshStorageUsageIndicators();
     }
 
     private JPanel createWelcomePanel() {
@@ -660,6 +673,13 @@ public class FreeEedUI extends javax.swing.JFrame {
         subtitleLabel.setFont(new Font("SansSerif", Font.PLAIN, 13));
         subtitleLabel.setForeground(Color.GRAY);
         panel.add(subtitleLabel, gbc);
+
+        gbc.gridy++;
+        gbc.insets = new Insets(0, 0, 20, 0);
+        storageBannerLabel = new JLabel(" ");
+        storageBannerLabel.setFont(new Font("SansSerif", Font.BOLD, 13));
+        storageBannerLabel.setForeground(new Color(33, 150, 243));
+        panel.add(storageBannerLabel, gbc);
 
         // Stepper row
         gbc.gridy++;
@@ -913,6 +933,7 @@ public class FreeEedUI extends javax.swing.JFrame {
         Project project = Project.getCurrentProject();
         if (project == null || project.isEmpty()) {
             statusLabel.setText("No project open.");
+            refreshStorageUsageIndicators();
             return;
         }
         StringBuilder sb = new StringBuilder();
@@ -929,6 +950,7 @@ public class FreeEedUI extends javax.swing.JFrame {
         sb.append(" | ").append(inputCount).append(inputCount == 1 ? " input" : " inputs");
         statusLabel.setText(sb.toString());
         refreshStepper();
+        refreshStorageUsageIndicators();
     }
 
     public void showProcessingOptions() {
@@ -1048,6 +1070,8 @@ public class FreeEedUI extends javax.swing.JFrame {
     private void openProgramSettings() {
         ProgramSettingsUI programSettingsUI = new ProgramSettingsUI(this, true);
         programSettingsUI.setVisible(true);
+        applyEditionFeatureGates();
+        refreshStorageUsageIndicators();
     }
 
     private void openSolr() {
@@ -1065,6 +1089,8 @@ public class FreeEedUI extends javax.swing.JFrame {
     public void processProject() {
         try {
             runProcessing();
+            checkOutputDirGrowthForFreeUsers();
+            refreshStorageUsageIndicators();
         } catch (IllegalStateException e) {
             JOptionPane.showMessageDialog(this, "There were some problems with processing, \""
                     + e.getMessage() + "\n"
@@ -1168,12 +1194,152 @@ public class FreeEedUI extends javax.swing.JFrame {
         ui.setVisible(true);
         // refresh gates in case edition changed
         applyEditionFeatureGates();
+        refreshStorageUsageIndicators();
     }
 
     private void applyEditionFeatureGates() {
         boolean isOpenSource = Settings.getSettings().isOpenSourceEdition();
         menuItemBackup.setEnabled(!isOpenSource);
     }
+
+    private void refreshStorageUsageIndicators() {
+        if (storageUsageLabel == null && storageBannerLabel == null) {
+            return;
+        }
+
+        Settings settings = Settings.getSettings();
+        long currentSize = directorySize(new File(settings.getOutputDir()));
+        boolean isOpenSource = settings.isOpenSourceEdition();
+
+        String usageText = isOpenSource
+                ? "Storage used: " + formatBytes(currentSize) + " out of 50 GB"
+                : "Storage used: " + formatBytes(currentSize) + " out of Unlimited";
+
+        if (storageUsageLabel != null) {
+            storageUsageLabel.setText(usageText);
+        }
+
+        if (storageBannerLabel != null) {
+            if (isOpenSource) {
+                int percent = (int) Math.min(100L, Math.round((currentSize * 100.0) / FREE_STORAGE_LIMIT_BYTES));
+                storageBannerLabel.setText("Free plan monitor: " + usageText + " (" + percent + "% used)");
+                storageBannerLabel.setForeground(percent >= 80 ? new Color(194, 24, 91) : new Color(33, 150, 243));
+                storageBannerLabel.setToolTipText("Upgrade to Professional or Enterprise for unlimited storage.");
+            } else {
+                storageBannerLabel.setText("Professional/Enterprise plan monitor: " + usageText);
+                storageBannerLabel.setForeground(new Color(56, 142, 60));
+                storageBannerLabel.setToolTipText("Unlimited storage enabled.");
+            }
+        }
+    }
+
+    private void enforceOutputDirForFreeUsers() {
+        Settings settings = Settings.getSettings();
+        if (!settings.isOpenSourceEdition()) {
+            return;
+        }
+
+        String configured = settings.getProperty(ParameterProcessing.APPLICATION_OUTPUT_DIR);
+        if ("/out".equals(configured != null ? configured.trim() : "")) {
+            return;
+        }
+
+        settings.setOutputDir("/out");
+        try {
+            settings.save();
+        } catch (Exception e) {
+            LOGGER.warning("Could not persist free-edition output dir default: " + e.getMessage());
+        }
+    }
+
+    private void checkOutputDirGrowthForFreeUsers() {
+        Settings settings = Settings.getSettings();
+        if (!settings.isOpenSourceEdition()) {
+            return;
+        }
+
+        String outputDir = settings.getOutputDir();
+        File outFolder = new File(outputDir);
+        long currentSize = directorySize(outFolder);
+        long previousSize = settings.getOutputDirLastSizeBytes();
+        long lastPromptSize = settings.getOutputDirLastPromptSizeBytes();
+
+        boolean changed = currentSize != previousSize;
+        if (changed) {
+            settings.setOutputDirLastSizeBytes(currentSize);
+        }
+
+        if (currentSize > previousSize) {
+            long baseline = Math.max(previousSize, lastPromptSize);
+            if (currentSize - baseline >= FREE_OUTPUT_UPGRADE_PROMPT_STEP_BYTES) {
+                settings.setOutputDirLastPromptSizeBytes(currentSize);
+                showUpgradePromptForOutputGrowth(currentSize);
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            try {
+                settings.save();
+            } catch (Exception e) {
+                LOGGER.warning("Could not persist output folder growth state: " + e.getMessage());
+            }
+        }
+    }
+
+    private void showUpgradePromptForOutputGrowth(long currentSizeBytes) {
+        String message = "<html>Your /out folder has grown to " + formatBytes(currentSizeBytes)
+                + ".<br>Upgrade to Premium for advanced output and storage controls.</html>";
+        Object[] options = {"See Upgrade Options", "Later"};
+        int choice = JOptionPane.showOptionDialog(
+                this,
+                message,
+                "Output Folder Growth",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.INFORMATION_MESSAGE,
+                null,
+                options,
+                options[1]
+        );
+        if (choice == JOptionPane.YES_OPTION) {
+            openHostingDialog();
+        }
+    }
+
+    private long directorySize(File path) {
+        if (path == null || !path.exists()) {
+            return 0L;
+        }
+        if (path.isFile()) {
+            return path.length();
+        }
+        long total = 0L;
+        File[] files = path.listFiles();
+        if (files == null) {
+            return 0L;
+        }
+        for (File file : files) {
+            total += directorySize(file);
+        }
+        return total;
+    }
+
+    private String formatBytes(long size) {
+        if (size < 1024L) {
+            return size + " B";
+        }
+        double kb = size / 1024.0;
+        if (kb < 1024.0) {
+            return String.format(java.util.Locale.US, "%.1f KB", kb);
+        }
+        double mb = kb / 1024.0;
+        if (mb < 1024.0) {
+            return String.format(java.util.Locale.US, "%.1f MB", mb);
+        }
+        double gb = mb / 1024.0;
+        return String.format(java.util.Locale.US, "%.2f GB", gb);
+    }
+
     public final class WhatsNewDialog {
 
         private static final String FULL_CHANGELOG_URL =

@@ -45,3 +45,33 @@ myenv/
 .ipynb_checkpoints
 __pycache__/
 .vscode/
+
+# Packaging and release bundles (non-source)
+freeeed_complete_pack/
+releases/
+
+# Non-Java script artifacts (tracked scripts remain tracked)
+*.sh
+*.bat
+*.ps1
+
+# Large binary/archive artifacts
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+*.gz
+*.bz2
+*.rar
+*.iso
+*.dmg
+*.exe
+*.msi
+*.pkg
+
+# Large mailbox/data file formats
+*.pst
+*.ost
+*.mbox
+*.nsf

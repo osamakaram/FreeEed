@@ -222,6 +222,7 @@ public class ProcessProgressUI extends javax.swing.JDialog {
         okButton.setEnabled(false);
         progressBar.setValue(0);
         progressBar.setStringPainted(true);
+        progressBar.setString(null);
     }
 
     public void setProcessingFinished() {
@@ -245,12 +246,27 @@ public class ProcessProgressUI extends javax.swing.JDialog {
      */
     public synchronized void setDone() {
         EventQueue.invokeLater(() -> {
+            progressBar.setIndeterminate(false);
+            progressBar.setString(null);
             progressBar.setValue(100);
+            fileLabel.setText("Processing complete.");
             processingFinished = true;
             okButton.setEnabled(true);
             FreeEedUI.getInstance().refreshStepper();
         });
 
+    }
+
+    public void setFinalizingState() {
+        EventQueue.invokeLater(() -> {
+            if (processingFinished) {
+                return;
+            }
+            progressBar.setValue(Math.min(progressBar.getValue(), 99));
+            progressBar.setIndeterminate(true);
+            progressBar.setString("Finalizing...");
+            fileLabel.setText("Finalizing results, closing files, and updating indexes. This may take a minute.");
+        });
     }
 
     /**
@@ -290,7 +306,10 @@ public class ProcessProgressUI extends javax.swing.JDialog {
     public void updateProgress(long size) {
         final long value = total == 0 ? 0 : size * 100 / Stats.getInstance().getCurrentItemTotalInZip();
         EventQueue.invokeLater(() -> {
-            progressBar.setValue((int) value);
+            int progressValue = (int) Math.min(value, 99);
+            progressBar.setIndeterminate(false);
+            progressBar.setString(null);
+            progressBar.setValue(progressValue);
         });
     }
 
