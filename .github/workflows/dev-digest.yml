@@ -6,7 +6,8 @@ name: Dev daily digest (all repos)
 # are needed on the other repos' main branches.
 on:
   schedule:
-    - cron: '0 13 * * *'   # 13:00 UTC daily
+    - cron: '0 13 * * *'   # 13:00 UTC = 8:00 am America/Chicago (CDT). GitHub cron is
+                           # fixed UTC and ignores DST, so this becomes 7:00 am during CST (winter).
   workflow_dispatch:
 
 jobs:
