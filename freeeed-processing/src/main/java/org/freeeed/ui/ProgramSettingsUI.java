@@ -45,7 +45,7 @@ import org.freeeed.util.LogFactory;
 public class ProgramSettingsUI extends javax.swing.JDialog {
 
     private final static Logger LOGGER = LogFactory.getLogger(ProgramSettingsUI.class.getName());
-    private static final long FREE_STORAGE_LIMIT_BYTES = 50L * 1024L * 1024L * 1024L;
+    private static final long FREE_STORAGE_LIMIT_BYTES = 1L * 1024L * 1024L * 1024L;
     private final Frame parent;
 
     /**
@@ -234,11 +234,11 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
             }
         }
 
-        String limitText = isOpenSource ? "50 GB" : "Unlimited";
+        String limitText = isOpenSource ? "1 GB" : "Unlimited";
         outputDirSizeLabel.setText("Storage used: " + formatBytes(sizeBytes) + " out of " + limitText);
         if (isOpenSource) {
             int percent = (int) Math.min(100L, Math.round((sizeBytes * 100.0) / FREE_STORAGE_LIMIT_BYTES));
-            outputDirSizeLabel.setToolTipText("Free plan usage: " + percent + "% of 50 GB");
+            outputDirSizeLabel.setToolTipText("Free plan usage: " + percent + "% of 1 GB");
         } else {
             outputDirSizeLabel.setToolTipText("Paid plan includes unlimited output storage.");
         }

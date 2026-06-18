@@ -46,7 +46,7 @@ public class FreeEedUI extends javax.swing.JFrame {
 
     private final static Logger LOGGER = LogFactory.getLogger(FreeEedUI.class.getName());
     private static final long FREE_OUTPUT_UPGRADE_PROMPT_STEP_BYTES = 200L * 1024L * 1024L;
-    private static final long FREE_STORAGE_LIMIT_BYTES = 50L * 1024L * 1024L * 1024L;
+    private static final long FREE_STORAGE_LIMIT_BYTES = 1L * 1024L * 1024L * 1024L;
     public static String defaultTitle = ParameterProcessing.APP_NAME + ParameterProcessing.TM
             + " v" + Version.getVersionNumber() + " - e-Discovery, Search, and AI Platform";
 
@@ -1212,7 +1212,7 @@ public class FreeEedUI extends javax.swing.JFrame {
         boolean isOpenSource = settings.isOpenSourceEdition();
 
         String usageText = isOpenSource
-                ? "Storage used: " + formatBytes(currentSize) + " out of 50 GB"
+                ? "Storage used: " + formatBytes(currentSize) + " out of 1 GB"
                 : "Storage used: " + formatBytes(currentSize) + " out of Unlimited";
 
         if (storageUsageLabel != null) {
