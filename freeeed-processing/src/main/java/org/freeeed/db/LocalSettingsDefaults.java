@@ -41,6 +41,9 @@ class LocalSettingsDefaults {
                 {"project-bucket", "freeeed_projects"},
                 {"review_endpoint", "http://localhost:8080/freeeedui"},
                 {"solr_endpoint", "http://localhost:8983"},
+                {ParameterProcessing.APPLICATION_OUTPUT_DIR, "/out"},
+                {ParameterProcessing.OUTPUT_DIR_LAST_SIZE_BYTES, "0"},
+                {ParameterProcessing.OUTPUT_DIR_LAST_PROMPT_SIZE_BYTES, "0"},
                 // defines the maximum size of a file that the application can process
                 {"file_max_size_mb", "1024"},
                 { ParameterProcessing.PROCESS_TIMEOUT_SEC, "300"}

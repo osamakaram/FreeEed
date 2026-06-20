@@ -11,6 +11,6 @@ wmic process where "CommandLine like '%%FreeEedUI%%' and Name like '%%java%%'" c
 REM --------------------------------------------------
 REM Start FreeEed Player
 REM --------------------------------------------------
-cd FreeEed
+cd freeeed_complete_pack\FreeEed
 start "FreeEed Player" cmd /c freeeed_player.bat
-cd ..
+cd ..\..

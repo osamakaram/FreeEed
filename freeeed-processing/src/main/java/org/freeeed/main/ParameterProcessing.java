@@ -146,6 +146,8 @@ public class ParameterProcessing {
     public static final String SOLRCLOUD_REPLICA_COUNT = "solrcloud_replica_count";
     public static final String SOLRCLOUD_SHARD_COUNT = "solrcloud_shard_count";
     public static final String APPLICATION_OUTPUT_DIR = "output_dir";
+    public static final String OUTPUT_DIR_LAST_SIZE_BYTES = "output_dir_last_size_bytes";
+    public static final String OUTPUT_DIR_LAST_PROMPT_SIZE_BYTES = "output_dir_last_prompt_size_bytes";
     // 0 = eDiscovery, 1 = load file
     public static final String DATA_SOURCE = "data_source";
     // Valid values: CSV, JSON

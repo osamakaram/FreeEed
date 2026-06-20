@@ -45,6 +45,7 @@ import org.freeeed.util.LogFactory;
 public class ProgramSettingsUI extends javax.swing.JDialog {
 
     private final static Logger LOGGER = LogFactory.getLogger(ProgramSettingsUI.class.getName());
+    private static final long FREE_STORAGE_LIMIT_BYTES = 1L * 1024L * 1024L * 1024L;
     private final Frame parent;
 
     /**
@@ -127,7 +128,6 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
         settings.setReviewEndpoint(reviewEndpointTextField.getText());
         settings.setAiEndpoint(aiEndpointTextField.getText());
         settings.setProviderApiKey(providerApiKey.getText());
-        settings.setOutputDir(outputDirTextField.getText());
         settings.setStraighThroughProcessing(straightThroughCheck.isSelected());
         settings.setProcessTimeout(Integer.parseInt(processTimeout.getText()));
         settings.setAiService(aiServiceCombo.getSelectedItem().toString());
@@ -143,6 +143,13 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
                 settings.setEditionRemembered(false);
             }
         }
+
+        if (settings.isOpenSourceEdition()) {
+            settings.setOutputDir("/out");
+        } else {
+            settings.setOutputDir(outputDirTextField.getText());
+        }
+
         try {
             settings.save();
         } catch (Exception e) {
@@ -161,6 +168,7 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
         solrEndpointTextField.setText(settings.getSolrEndpoint());
         reviewEndpointTextField.setText(settings.getReviewEndpoint());
         outputDirTextField.setText(settings.getOutputDir());
+        updateOutputDirSize();
         premiumFeaturesField.setText(settings.getPremiumFeaturesDirectory());
         straightThroughCheck.setSelected(settings.isStraightThroughProcessing());
         processTimeout.setText(settings.getProcessTimeout() + "");
@@ -194,6 +202,71 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
             edition = FreeEedEdition.EDITION_OPEN_SOURCE;
         }
         editionCombo.setSelectedItem(edition);
+        updateOutputDirFieldState();
+    }
+
+    private void updateOutputDirFieldState() {
+        String selectedEdition = (String) editionCombo.getSelectedItem();
+        boolean isOpenSource = FreeEedEdition.EDITION_OPEN_SOURCE.equals(selectedEdition);
+        if (isOpenSource) {
+            outputDirTextField.setText("/out");
+            outputDirTextField.setEnabled(false);
+            outputDirBrowseButton.setEnabled(false);
+            outputDirTextField.setToolTipText("Output directory is fixed to /out for free users.");
+        } else {
+            outputDirTextField.setEnabled(true);
+            outputDirBrowseButton.setEnabled(true);
+            outputDirTextField.setToolTipText(null);
+        }
+        updateOutputDirSize();
+    }
+
+    private void updateOutputDirSize() {
+        String outputDir = outputDirTextField.getText();
+        String selectedEdition = (String) editionCombo.getSelectedItem();
+        boolean isOpenSource = FreeEedEdition.EDITION_OPEN_SOURCE.equals(selectedEdition);
+
+        long sizeBytes = 0L;
+        if (outputDir != null && !outputDir.trim().isEmpty()) {
+            java.io.File dir = new java.io.File(outputDir);
+            if (dir.exists()) {
+                sizeBytes = directorySize(dir);
+            }
+        }
+
+        String limitText = isOpenSource ? "1 GB" : "Unlimited";
+        outputDirSizeLabel.setText("Storage used: " + formatBytes(sizeBytes) + " out of " + limitText);
+        if (isOpenSource) {
+            int percent = (int) Math.min(100L, Math.round((sizeBytes * 100.0) / FREE_STORAGE_LIMIT_BYTES));
+            outputDirSizeLabel.setToolTipText("Free plan usage: " + percent + "% of 1 GB");
+        } else {
+            outputDirSizeLabel.setToolTipText("Paid plan includes unlimited output storage.");
+        }
+    }
+
+    private long directorySize(java.io.File directory) {
+        long length = 0;
+        if (directory == null || !directory.isDirectory()) {
+            return length;
+        }
+        java.io.File[] files = directory.listFiles();
+        if (files != null) {
+            for (java.io.File file : files) {
+                if (file.isFile()) {
+                    length += file.length();
+                } else {
+                    length += directorySize(file);
+                }
+            }
+        }
+        return length;
+    }
+
+    private String formatBytes(long bytes) {
+        if (bytes <= 0) return "0 B";
+        final String[] units = new String[] { "B", "KB", "MB", "GB" };
+        int digitGroups = (int) (Math.log10(bytes) / Math.log10(1024));
+        return String.format("%.1f %s", bytes / Math.pow(1024, digitGroups), units[digitGroups]);
     }
 
     /**
@@ -217,6 +290,8 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
         cancelButton = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
         outputDirTextField = new javax.swing.JTextField();
+        outputDirBrowseButton = new javax.swing.JButton();
+        outputDirSizeLabel = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         straightThroughCheck = new javax.swing.JCheckBox();
         jLabel6 = new javax.swing.JLabel();
@@ -322,6 +397,16 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
 
         outputDirTextField.setName("outputDirTextField"); // NOI18N
 
+        outputDirSizeLabel.setText("(calculating...)");
+        outputDirSizeLabel.setForeground(new java.awt.Color(100, 100, 100));
+
+        outputDirBrowseButton.setText("Browse...");
+        outputDirBrowseButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                outputDirBrowseButtonActionPerformed(evt);
+            }
+        });
+
         jLabel3.setText("Output dir:");
 
         straightThroughCheck.setText("Continue with local processing after staging");
@@ -341,6 +426,11 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
 
         editionCombo.setModel(new javax.swing.DefaultComboBoxModel<>(
                 new String[] { "Open source (Free)", "Premium Features (Paid)" }));
+        editionCombo.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                editionComboActionPerformed(evt);
+            }
+        });
 
         metadataSettingsButton.setText("Metadata settings");
         metadataSettingsButton.addActionListener(new java.awt.event.ActionListener() {
@@ -364,7 +454,11 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
                                         .addGroup(jPanel2Layout.createSequentialGroup()
                                                 .addComponent(jLabel3)
                                                 .addGap(18, 18, 18)
-                                                .addComponent(outputDirTextField))
+                                                .addComponent(outputDirTextField)
+                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                            .addComponent(outputDirBrowseButton)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                .addComponent(outputDirSizeLabel))
                                         .addGroup(jPanel2Layout.createSequentialGroup()
                                                 .addComponent(jLabel15)
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -400,7 +494,9 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
                                 .addGap(18, 18, 18)
                                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                         .addComponent(jLabel3)
-                                        .addComponent(outputDirTextField))
+                                        .addComponent(outputDirTextField)
+                                    .addComponent(outputDirBrowseButton)
+                                        .addComponent(outputDirSizeLabel))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(metadataSettingsButton)
                                 .addGap(12, 12, 12)
@@ -418,6 +514,7 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
                                 .addContainerGap()));
 
         outputDirTextField.getAccessibleContext().setAccessibleName("outputDirTextField");
+        outputDirSizeLabel.getAccessibleContext().setAccessibleName("outputDirSizeLabel");
 
         jPanel3.setBorder(javax.swing.BorderFactory
                 .createTitledBorder(javax.swing.BorderFactory.createTitledBorder("Solr"), "AI settings"));
@@ -596,9 +693,35 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
         // TODO add your handling code here:
     }// GEN-LAST:event_aiServiceComboActionPerformed
 
+    private void editionComboActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_editionComboActionPerformed
+        updateOutputDirFieldState();
+    }// GEN-LAST:event_editionComboActionPerformed
+
     private void metadataSettingsButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_metadataSettingsButtonActionPerformed
         showMetadataSettings();
     }// GEN-LAST:event_metadataSettingsButtonActionPerformed
+
+    private void outputDirBrowseButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_outputDirBrowseButtonActionPerformed
+        javax.swing.JFileChooser chooser = new javax.swing.JFileChooser();
+        chooser.setDialogTitle("Select Output Folder");
+        chooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
+        chooser.setAcceptAllFileFilterUsed(false);
+
+        String current = outputDirTextField.getText();
+        if (current != null && !current.trim().isEmpty()) {
+            java.io.File currentDir = new java.io.File(current);
+            if (currentDir.exists()) {
+                chooser.setCurrentDirectory(currentDir);
+                chooser.setSelectedFile(currentDir);
+            }
+        }
+
+        int result = chooser.showOpenDialog(this);
+        if (result == javax.swing.JFileChooser.APPROVE_OPTION && chooser.getSelectedFile() != null) {
+            outputDirTextField.setText(chooser.getSelectedFile().getAbsolutePath());
+            updateOutputDirSize();
+        }
+    }// GEN-LAST:event_outputDirBrowseButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -746,6 +869,7 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
     private javax.swing.JButton cancelButton;
     private javax.swing.JComboBox<String> editionCombo;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel outputDirSizeLabel;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
@@ -767,6 +891,7 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
     private javax.swing.JPanel jPanel3;
     private javax.swing.JButton metadataSettingsButton;
     private javax.swing.JButton okButton;
+    private javax.swing.JButton outputDirBrowseButton;
     private javax.swing.JTextField outputDirTextField;
     private javax.swing.JTextField premiumFeaturesField;
     private javax.swing.JTextField processTimeout;

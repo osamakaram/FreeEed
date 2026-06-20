@@ -21,6 +21,7 @@ import org.freeeed.data.index.LuceneIndex;
 import org.freeeed.data.index.SolrIndex;
 import org.freeeed.mr.MetadataWriter;
 import org.freeeed.services.*;
+import org.freeeed.ui.ProcessProgressUI;
 import org.freeeed.ui.UtilUI;
 import org.freeeed.util.LogFactory;
 
@@ -36,18 +37,25 @@ import java.util.concurrent.Executors;
 public class MainRunner {
     private final static java.util.logging.Logger LOGGER = LogFactory.getLogger(MainRunner.class.getName());
 
+    private interface ThrowingRunnable {
+        void run() throws IOException, InterruptedException;
+    }
+
 
     public static void run(String[] args) {
+        MetadataWriter metadataWriter = null;
+        LuceneIndex luceneIndex = null;
+        ExecutorService executorService = null;
         try {
             UniqueIdGenerator.getInstance().reset();
             Project project = Project.getCurrentProject();
 
-            LuceneIndex luceneIndex = new LuceneIndex(
+            luceneIndex = new LuceneIndex(
                     Settings.getSettings().getLuceneIndexDir(), project.getProjectCode(), null);
 
             SolrIndex.getInstance().init();
             //OfficePrint.getInstance().init();
-            MetadataWriter metadataWriter = new MetadataWriter();
+            metadataWriter = new MetadataWriter();
             try {
                 metadataWriter.setup();
             } catch (IOException e) {
@@ -85,7 +93,9 @@ public class MainRunner {
                             processor.process(false, null);
                         }
                     } else if (piranha1) {
-                        ExecutorService executorService = Executors.newFixedThreadPool(4); // Adjust thread pool size as needed
+                        executorService = Executors.newFixedThreadPool(4); // Adjust thread pool size as needed
+                        final MetadataWriter metadataWriterRef = metadataWriter;
+                        final LuceneIndex luceneIndexRef = luceneIndex;
                         for (String zipFileInput : zipFiles) {
                             executorService.submit(() -> {
                                 try {
@@ -98,7 +108,7 @@ public class MainRunner {
                                     // new ZipServices().addToJobSize(zipFile);
 
                                     // Process archive file 
-                                    ZipFileProcessor processor = new ZipFileProcessor(zipFile, metadataWriter, luceneIndex);
+                                    ZipFileProcessor processor = new ZipFileProcessor(zipFile, metadataWriterRef, luceneIndexRef);
                                     processor.process(false, null);
 
                                 } catch (Exception e) {
@@ -106,14 +116,8 @@ public class MainRunner {
                                 }
                             });
                         }
-
-
                     }
                 }
-                metadataWriter.cleanup();
-                luceneIndex.destroy();
-                SolrIndex.getInstance().flushBatchData();
-                SolrIndex.getInstance().destroy();
                 LOGGER.info("Processing finished");
             } else {
                 LOGGER.severe("Non-existent processing engine");
@@ -121,6 +125,39 @@ public class MainRunner {
             }
         } catch (IOException | InterruptedException e) {
             LOGGER.severe("Error in processing");
+        } finally {
+            ProcessProgressUI progressUI = ProcessProgressUI.getInstance();
+            if (progressUI != null) {
+                progressUI.setFinalizingState();
+            }
+
+            if (executorService != null) {
+                executorService.shutdown();
+            }
+
+            final MetadataWriter metadataWriterRef = metadataWriter;
+            final LuceneIndex luceneIndexRef = luceneIndex;
+
+            cleanupQuietly(() -> {
+                if (metadataWriterRef != null) {
+                    metadataWriterRef.cleanup();
+                }
+            }, "metadata writer cleanup");
+            cleanupQuietly(() -> {
+                if (luceneIndexRef != null) {
+                    luceneIndexRef.destroy();
+                }
+            }, "lucene index cleanup");
+            cleanupQuietly(() -> SolrIndex.getInstance().flushBatchData(), "Solr flush");
+            cleanupQuietly(() -> SolrIndex.getInstance().destroy(), "Solr cleanup");
+        }
+    }
+
+    private static void cleanupQuietly(ThrowingRunnable cleanupAction, String description) {
+        try {
+            cleanupAction.run();
+        } catch (Exception e) {
+            LOGGER.warning("Error during " + description + ": " + e.getMessage());
         }
     }
 }

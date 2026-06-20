@@ -514,10 +514,10 @@ public class Settings extends Properties {
     public String getOutputDir() {
         String configuredDir = getProperty(ParameterProcessing.APPLICATION_OUTPUT_DIR);
         if (StringUtils.isEmpty(configuredDir)) {
-            configuredDir = "output";
+            configuredDir = "/out";
         }
 
-        if (!configuredDir.endsWith(File.separator)) {
+        if (!configuredDir.endsWith("/") && !configuredDir.endsWith("\\")) {
             configuredDir = configuredDir + File.separator;
         }
 
@@ -526,6 +526,38 @@ public class Settings extends Properties {
 
     public void setOutputDir(String outputDir) {
         setProperty(ParameterProcessing.APPLICATION_OUTPUT_DIR, outputDir);
+    }
+
+    public long getOutputDirLastSizeBytes() {
+        String value = getProperty(ParameterProcessing.OUTPUT_DIR_LAST_SIZE_BYTES);
+        if (value == null || value.trim().isEmpty()) {
+            return 0L;
+        }
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException ex) {
+            return 0L;
+        }
+    }
+
+    public void setOutputDirLastSizeBytes(long sizeBytes) {
+        setProperty(ParameterProcessing.OUTPUT_DIR_LAST_SIZE_BYTES, String.valueOf(Math.max(0L, sizeBytes)));
+    }
+
+    public long getOutputDirLastPromptSizeBytes() {
+        String value = getProperty(ParameterProcessing.OUTPUT_DIR_LAST_PROMPT_SIZE_BYTES);
+        if (value == null || value.trim().isEmpty()) {
+            return 0L;
+        }
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException ex) {
+            return 0L;
+        }
+    }
+
+    public void setOutputDirLastPromptSizeBytes(long sizeBytes) {
+        setProperty(ParameterProcessing.OUTPUT_DIR_LAST_PROMPT_SIZE_BYTES, String.valueOf(Math.max(0L, sizeBytes)));
     }
 
     public String getTmpDir() {
