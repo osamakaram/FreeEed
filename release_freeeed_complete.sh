@@ -15,7 +15,19 @@ FREEEED_UI_PROJECT=$PROJECT_DIR/FreeEedUI
 PYTHON_DIR=$PROJECT_DIR/FreeEed/python 
 FEATURES_DIR=$SCAIA_HOME/FreeEed-features/releases
 VERSION=10.8.4-SNAPSHOT
-echo "Building version "$VERSION
+
+# Build identity: the exact commit this pack is built from, so any published
+# build is traceable back to source. A trailing "+" means the working tree had
+# uncommitted changes -- do not promote such a build to "latest".
+GIT_SHA=$(git -C "$FREEEED_PROJECT" rev-parse --short HEAD 2>/dev/null || echo unknown)
+if [ -n "$(git -C "$FREEEED_PROJECT" status --porcelain 2>/dev/null)" ]; then
+  GIT_DIRTY=true
+  BUILD_ID="${GIT_SHA}+"
+else
+  GIT_DIRTY=false
+  BUILD_ID="$GIT_SHA"
+fi
+echo "Building version $VERSION (build $BUILD_ID)"
 
 #============================ user setup ==================================
 
@@ -163,7 +175,7 @@ if [ "$BUILD_FREEEED_PACK" == true ]; then
     cp $FREEEED_PROJECT/uninstall.sh .
     cp $FREEEED_PROJECT/freeeed.png .
     cp $FREEEED_PROJECT/EULA.txt .
-    echo "$VERSION" > VERSION
+    { echo "$VERSION"; echo "build=$BUILD_ID"; } > VERSION
 
     cd $CURR_DIR || exit
     mv tmp freeeed_complete_pack
@@ -275,6 +287,12 @@ if [ "$UPLOAD_TO_S3_FREEEED_PACK" == true ]; then
     # Also publish a stable "latest" alias so the README daily-build links never drift.
     aws s3 cp freeeed_complete_pack-$VERSION.zip s3://shmsoft/releases/freeeed_complete_pack-latest.zip --profile shmsoft
     aws s3api put-object-acl --bucket shmsoft --key releases/freeeed_complete_pack-latest.zip --acl public-read --profile shmsoft
+    # Keep an immutable, SHA-stamped copy so "latest" is traceable and rollback is possible.
+    if [ "$GIT_DIRTY" = true ]; then
+        echo "WARNING: building from a dirty tree (uncommitted changes); 'latest' is not reproducible from source."
+    fi
+    aws s3 cp freeeed_complete_pack-$VERSION.zip s3://shmsoft/releases/archive/freeeed_complete_pack-$VERSION-$GIT_SHA.zip --profile shmsoft
+    aws s3api put-object-acl --bucket shmsoft --key releases/archive/freeeed_complete_pack-$VERSION-$GIT_SHA.zip --acl public-read --profile shmsoft
 
     echo "Uploading Installers to S3..."
     if [ -f "FreeEed-$VERSION-macOS.dmg" ]; then
