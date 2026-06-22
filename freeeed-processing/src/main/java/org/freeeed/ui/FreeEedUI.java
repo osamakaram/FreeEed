@@ -615,7 +615,6 @@ public class FreeEedUI extends javax.swing.JFrame {
     private JLabel[] arrowLabels;
     private JLabel stepDescription;
     private JLabel storageUsageLabel;
-    private JLabel storageBannerLabel;
 
     private void myInitComponents() {
         addWindowListener(new FrameListener());
@@ -673,13 +672,6 @@ public class FreeEedUI extends javax.swing.JFrame {
         subtitleLabel.setFont(new Font("SansSerif", Font.PLAIN, 13));
         subtitleLabel.setForeground(Color.GRAY);
         panel.add(subtitleLabel, gbc);
-
-        gbc.gridy++;
-        gbc.insets = new Insets(0, 0, 20, 0);
-        storageBannerLabel = new JLabel(" ");
-        storageBannerLabel.setFont(new Font("SansSerif", Font.BOLD, 13));
-        storageBannerLabel.setForeground(new Color(33, 150, 243));
-        panel.add(storageBannerLabel, gbc);
 
         // Stepper row
         gbc.gridy++;
@@ -1203,34 +1195,14 @@ public class FreeEedUI extends javax.swing.JFrame {
     }
 
     private void refreshStorageUsageIndicators() {
-        if (storageUsageLabel == null && storageBannerLabel == null) {
+        if (storageUsageLabel == null) {
             return;
         }
 
         Settings settings = Settings.getSettings();
         long currentSize = directorySize(new File(settings.getOutputDir()));
-        boolean isOpenSource = settings.isOpenSourceEdition();
 
-        String usageText = isOpenSource
-                ? "Storage used: " + formatBytes(currentSize) + " out of 1 GB"
-                : "Storage used: " + formatBytes(currentSize) + " out of Unlimited";
-
-        if (storageUsageLabel != null) {
-            storageUsageLabel.setText(usageText);
-        }
-
-        if (storageBannerLabel != null) {
-            if (isOpenSource) {
-                int percent = (int) Math.min(100L, Math.round((currentSize * 100.0) / FREE_STORAGE_LIMIT_BYTES));
-                storageBannerLabel.setText("Free plan monitor: " + usageText + " (" + percent + "% used)");
-                storageBannerLabel.setForeground(percent >= 80 ? new Color(194, 24, 91) : new Color(33, 150, 243));
-                storageBannerLabel.setToolTipText("Upgrade to Professional or Enterprise for unlimited storage.");
-            } else {
-                storageBannerLabel.setText("Professional/Enterprise plan monitor: " + usageText);
-                storageBannerLabel.setForeground(new Color(56, 142, 60));
-                storageBannerLabel.setToolTipText("Unlimited storage enabled.");
-            }
-        }
+        storageUsageLabel.setText("Storage used: " + formatBytes(currentSize));
     }
 
     private void enforceOutputDirForFreeUsers() {
