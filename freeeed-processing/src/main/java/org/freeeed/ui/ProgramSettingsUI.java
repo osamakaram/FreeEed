@@ -45,7 +45,6 @@ import org.freeeed.util.LogFactory;
 public class ProgramSettingsUI extends javax.swing.JDialog {
 
     private final static Logger LOGGER = LogFactory.getLogger(ProgramSettingsUI.class.getName());
-    private static final long FREE_STORAGE_LIMIT_BYTES = 1L * 1024L * 1024L * 1024L;
     private final Frame parent;
 
     /**
@@ -144,11 +143,7 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
             }
         }
 
-        if (settings.isOpenSourceEdition()) {
-            settings.setOutputDir("/out");
-        } else {
-            settings.setOutputDir(outputDirTextField.getText());
-        }
+        settings.setOutputDir(outputDirTextField.getText());
 
         try {
             settings.save();
@@ -206,26 +201,15 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
     }
 
     private void updateOutputDirFieldState() {
-        String selectedEdition = (String) editionCombo.getSelectedItem();
-        boolean isOpenSource = FreeEedEdition.EDITION_OPEN_SOURCE.equals(selectedEdition);
-        if (isOpenSource) {
-            outputDirTextField.setText("/out");
-            outputDirTextField.setEnabled(false);
-            outputDirBrowseButton.setEnabled(false);
-            outputDirTextField.setToolTipText("Output directory is fixed to /out for free users.");
-        } else {
-            outputDirTextField.setEnabled(true);
-            outputDirBrowseButton.setEnabled(true);
-            outputDirTextField.setToolTipText(null);
-        }
+        // Output directory is freely choosable in every edition.
+        outputDirTextField.setEnabled(true);
+        outputDirBrowseButton.setEnabled(true);
+        outputDirTextField.setToolTipText(null);
         updateOutputDirSize();
     }
 
     private void updateOutputDirSize() {
         String outputDir = outputDirTextField.getText();
-        String selectedEdition = (String) editionCombo.getSelectedItem();
-        boolean isOpenSource = FreeEedEdition.EDITION_OPEN_SOURCE.equals(selectedEdition);
-
         long sizeBytes = 0L;
         if (outputDir != null && !outputDir.trim().isEmpty()) {
             java.io.File dir = new java.io.File(outputDir);
@@ -233,15 +217,8 @@ public class ProgramSettingsUI extends javax.swing.JDialog {
                 sizeBytes = directorySize(dir);
             }
         }
-
-        String limitText = isOpenSource ? "1 GB" : "Unlimited";
-        outputDirSizeLabel.setText("Storage used: " + formatBytes(sizeBytes) + " out of " + limitText);
-        if (isOpenSource) {
-            int percent = (int) Math.min(100L, Math.round((sizeBytes * 100.0) / FREE_STORAGE_LIMIT_BYTES));
-            outputDirSizeLabel.setToolTipText("Free plan usage: " + percent + "% of 1 GB");
-        } else {
-            outputDirSizeLabel.setToolTipText("Paid plan includes unlimited output storage.");
-        }
+        outputDirSizeLabel.setText("Storage used: " + formatBytes(sizeBytes));
+        outputDirSizeLabel.setToolTipText(null);
     }
 
     private long directorySize(java.io.File directory) {

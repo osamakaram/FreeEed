@@ -146,6 +146,11 @@ public class ParameterProcessing {
     public static final String SOLRCLOUD_REPLICA_COUNT = "solrcloud_replica_count";
     public static final String SOLRCLOUD_SHARD_COUNT = "solrcloud_shard_count";
     public static final String APPLICATION_OUTPUT_DIR = "output_dir";
+    // Writable per-user default for results. The old "/out" default is a
+    // container path that does not exist / is not writable on a normal desktop,
+    // which left fresh installs unable to process.
+    public static final String DEFAULT_OUTPUT_DIR =
+            System.getProperty("user.home") + File.separator + "FreeEed-output";
     public static final String OUTPUT_DIR_LAST_SIZE_BYTES = "output_dir_last_size_bytes";
     public static final String OUTPUT_DIR_LAST_PROMPT_SIZE_BYTES = "output_dir_last_prompt_size_bytes";
     // 0 = eDiscovery, 1 = load file

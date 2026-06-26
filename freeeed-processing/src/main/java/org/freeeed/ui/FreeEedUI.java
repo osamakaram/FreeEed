@@ -45,8 +45,6 @@ import java.util.logging.Logger;
 public class FreeEedUI extends javax.swing.JFrame {
 
     private final static Logger LOGGER = LogFactory.getLogger(FreeEedUI.class.getName());
-    private static final long FREE_OUTPUT_UPGRADE_PROMPT_STEP_BYTES = 200L * 1024L * 1024L;
-    private static final long FREE_STORAGE_LIMIT_BYTES = 1L * 1024L * 1024L * 1024L;
     public static String defaultTitle = ParameterProcessing.APP_NAME + ParameterProcessing.TM
             + " v" + Version.getVersionNumber() + " - e-Discovery, Search, and AI Platform";
 
@@ -584,10 +582,8 @@ public class FreeEedUI extends javax.swing.JFrame {
     @Override
     public void setVisible(boolean b) {
         if (b) {
-            enforceOutputDirForFreeUsers();
             myInitComponents();
             applyEditionFeatureGates();
-            checkOutputDirGrowthForFreeUsers();
             refreshStorageUsageIndicators();
         }
         super.setVisible(b);
@@ -1081,7 +1077,6 @@ public class FreeEedUI extends javax.swing.JFrame {
     public void processProject() {
         try {
             runProcessing();
-            checkOutputDirGrowthForFreeUsers();
             refreshStorageUsageIndicators();
         } catch (IllegalStateException e) {
             JOptionPane.showMessageDialog(this, "There were some problems with processing, \""
@@ -1203,79 +1198,6 @@ public class FreeEedUI extends javax.swing.JFrame {
         long currentSize = directorySize(new File(settings.getOutputDir()));
 
         storageUsageLabel.setText("Storage used: " + formatBytes(currentSize));
-    }
-
-    private void enforceOutputDirForFreeUsers() {
-        Settings settings = Settings.getSettings();
-        if (!settings.isOpenSourceEdition()) {
-            return;
-        }
-
-        String configured = settings.getProperty(ParameterProcessing.APPLICATION_OUTPUT_DIR);
-        if ("/out".equals(configured != null ? configured.trim() : "")) {
-            return;
-        }
-
-        settings.setOutputDir("/out");
-        try {
-            settings.save();
-        } catch (Exception e) {
-            LOGGER.warning("Could not persist free-edition output dir default: " + e.getMessage());
-        }
-    }
-
-    private void checkOutputDirGrowthForFreeUsers() {
-        Settings settings = Settings.getSettings();
-        if (!settings.isOpenSourceEdition()) {
-            return;
-        }
-
-        String outputDir = settings.getOutputDir();
-        File outFolder = new File(outputDir);
-        long currentSize = directorySize(outFolder);
-        long previousSize = settings.getOutputDirLastSizeBytes();
-        long lastPromptSize = settings.getOutputDirLastPromptSizeBytes();
-
-        boolean changed = currentSize != previousSize;
-        if (changed) {
-            settings.setOutputDirLastSizeBytes(currentSize);
-        }
-
-        if (currentSize > previousSize) {
-            long baseline = Math.max(previousSize, lastPromptSize);
-            if (currentSize - baseline >= FREE_OUTPUT_UPGRADE_PROMPT_STEP_BYTES) {
-                settings.setOutputDirLastPromptSizeBytes(currentSize);
-                showUpgradePromptForOutputGrowth(currentSize);
-                changed = true;
-            }
-        }
-
-        if (changed) {
-            try {
-                settings.save();
-            } catch (Exception e) {
-                LOGGER.warning("Could not persist output folder growth state: " + e.getMessage());
-            }
-        }
-    }
-
-    private void showUpgradePromptForOutputGrowth(long currentSizeBytes) {
-        String message = "<html>Your /out folder has grown to " + formatBytes(currentSizeBytes)
-                + ".<br>Upgrade to Premium for advanced output and storage controls.</html>";
-        Object[] options = {"See Upgrade Options", "Later"};
-        int choice = JOptionPane.showOptionDialog(
-                this,
-                message,
-                "Output Folder Growth",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.INFORMATION_MESSAGE,
-                null,
-                options,
-                options[1]
-        );
-        if (choice == JOptionPane.YES_OPTION) {
-            openHostingDialog();
-        }
     }
 
     private long directorySize(File path) {

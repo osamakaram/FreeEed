@@ -514,7 +514,7 @@ public class Settings extends Properties {
     public String getOutputDir() {
         String configuredDir = getProperty(ParameterProcessing.APPLICATION_OUTPUT_DIR);
         if (StringUtils.isEmpty(configuredDir)) {
-            configuredDir = "/out";
+            configuredDir = ParameterProcessing.DEFAULT_OUTPUT_DIR;
         }
 
         if (!configuredDir.endsWith("/") && !configuredDir.endsWith("\\")) {
