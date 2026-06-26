@@ -13,6 +13,14 @@ Improvements and fixes:
     (duplicated --convert-to argument, isolated user profile, offline HTML sanitizing)
     and kill the whole process tree on command timeout
 * Release build produces unencrypted zips (removed the zip password lock)
+* Output directory now defaults to a writable per-user folder (~/FreeEed-output)
+    and can be changed in any edition - fixes the old /out default that left
+    fresh installs unable to process
+* Toned down edition/plan framing for a more open-source feel: removed the
+    "Professional/Enterprise plan monitor" banner and the storage-limit nags;
+    the status bar now simply shows storage used
+* Every build is stamped with its git commit and build time (About dialog,
+    -version, and the pack VERSION file), so any build is traceable to source
 
 9.0.0 (Dec. 2021)
 *
