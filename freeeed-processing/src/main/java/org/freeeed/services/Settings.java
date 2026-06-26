@@ -515,6 +515,13 @@ public class Settings extends Properties {
         String configuredDir = getProperty(ParameterProcessing.APPLICATION_OUTPUT_DIR);
         if (StringUtils.isEmpty(configuredDir)) {
             configuredDir = ParameterProcessing.DEFAULT_OUTPUT_DIR;
+        } else if ("/out".equals(configuredDir.trim()) && !isUsableDirectory("/out")) {
+            // Legacy default left over from older builds. "/out" is a container
+            // path that doesn't exist / isn't writable on a desktop, which leaves
+            // the install unable to process. Heal it to the writable per-user
+            // default. A real, writable /out (e.g. a server/container mount) is
+            // respected and kept.
+            configuredDir = ParameterProcessing.DEFAULT_OUTPUT_DIR;
         }
 
         if (!configuredDir.endsWith("/") && !configuredDir.endsWith("\\")) {
@@ -522,6 +529,11 @@ public class Settings extends Properties {
         }
 
         return configuredDir;
+    }
+
+    private static boolean isUsableDirectory(String path) {
+        File dir = new File(path);
+        return dir.isDirectory() && dir.canWrite();
     }
 
     public void setOutputDir(String outputDir) {
