@@ -42,11 +42,9 @@ public class OsUtil {
     private List<String> buffer = new ArrayList<>();
     // cached results of system check
     private static boolean hasReadpst;
-    private static boolean hasWkhtmltopdf;
     private static boolean hasSOffice;
     private static String readPstExecutableLocation;
     private static String sofficeExecutableLocation;
-    private static String wkhtmltopdfExecutableLocation;
 
     private static final String READPST_VERSION = "ReadPST / LibPST v0.6.66";
 
@@ -58,13 +56,6 @@ public class OsUtil {
      */
     public static boolean hasReadpst() {
         return hasReadpst;
-    }
-
-    /**
-     * @return whether the platform has wkhtmltopdf installed
-     */
-    public static boolean hasWkhtmltopdf() {
-        return hasWkhtmltopdf;
     }
 
     public static boolean hasSOffice() {
@@ -289,39 +280,6 @@ public class OsUtil {
         return errorMessage;
     }
 
-     // TODO added check for Windows
-    static String verifyWkhtmltopdf() {
-        String error = "";
-        hasWkhtmltopdf = false;
-        if (isNix()) {
-            try {
-                String location = findExecutableLocation("wkhtmltopdf", 
-                        new String[]{"/user/local/bin", "/usr/bin"});
-                if (!StringUtils.isEmpty(location)) {
-                    List<String> output = OsUtil.runCommand(location + " -V");
-                    if (!output.isEmpty()) {                        
-                        // this works on the Mac
-                        if (output.get(0).contains("wkhtmltopdf") ||
-                                // and this works on Ubuntu
-                                output.get(1).contains("wkhtmltopdf")) {
-                            hasWkhtmltopdf = true;
-                            wkhtmltopdfExecutableLocation = location;
-                            LOGGER.info("Detected wkhtmltopd at: " + wkhtmltopdfExecutableLocation);
-                            hasWkhtmltopdf = true;
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                LOGGER.warning("Could not verify wkhtmltopdf");
-            }
-        }
-        if (!hasWkhtmltopdf) {
-            error = "wkhtmltopdf is not found.\n"
-                    + "It is needed to convert html to PDF";
-        }
-        return error;
-    }
-
 
     private static String findExecutableLocation(String executableName) {
         return findExecutableLocation(executableName, new String[]{});
@@ -478,10 +436,6 @@ public class OsUtil {
             if (!error.isEmpty()) {
                 errors.append(error).append("\n\n");
             }
-            error = verifyWkhtmltopdf();
-            if (!error.isEmpty()) {
-                errors.append(error).append("\n\n");
-            }
             error = verifySOffice();
             if (!error.isEmpty()) {
                 errors.append(error);
@@ -493,7 +447,6 @@ public class OsUtil {
     public static List<String> getSystemSummary() {
         List<String> summary = new ArrayList<>();
         summary.add("readpst (PST extraction): " + hasReadpst);
-        summary.add("wkhtmltopdf (html to pdf printing): " + hasWkhtmltopdf);
         summary.add("soffice (LibreOffice command line interface): " + hasSOffice);
         return summary;
     }

@@ -108,16 +108,4 @@ public class Html2Pdf {
         out.close();
     }
 
-    /**
-     * wkhtmltopdf needs to be installed It is a great utility under active
-     * development It uses X11 and WebKit rendering engine of Apple's Safari
-     */
-    public static void html2pdfwk(String inputFile, String outputFile) {
-        String command = "wkhtmltopdf " + inputFile + " " + outputFile;
-        try {
-            OsUtil.runCommand(command);
-        } catch (IOException e) {
-            LOGGER.severe("wkhtmltopdf problem: " + e.getMessage());
-        }
-    }
 }
