@@ -28,7 +28,7 @@
 - “Imaging” (conversion of documents to PDF)
 
 ## Documentation
-Extensive documentation is available on the [wiki](https://github.com/markkerzner/FreeEed/wiki).
+Extensive documentation is available on the [wiki](https://github.com/markkerzner/FreeEed/wiki), including how to [run FreeEed over RDP on Ubuntu](https://github.com/shmsoft/FreeEed/wiki/Run-FreeEed-over-RDP-on-Ubuntu).
 
 ## How it works
 FreeEed is built with AI/ChatGPT, Tika, Lucene, and Solr and embodies best practices in Big Data.
