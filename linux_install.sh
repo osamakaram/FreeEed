@@ -104,4 +104,12 @@ EOF
 
 chmod +x "$DESKTOP_FILE"
 chmod +x "$INSTALL_DIR/ControlPanel.sh"
-echo "Installation complete. You can now launch FreeEed from your application menu."
+
+# Refresh the desktop menu so the entry shows up without a logout/login.
+# Best-effort: these tools may be absent on a minimal system.
+update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+xdg-desktop-menu forceupdate 2>/dev/null || true
+
+echo "Installation complete."
+echo "Launch 'FreeEed Control Panel' from your application menu (under Accessories/Office),"
+echo "or run: $INSTALL_DIR/ControlPanel.sh"
