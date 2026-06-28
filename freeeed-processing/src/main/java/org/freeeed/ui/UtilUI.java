@@ -44,20 +44,50 @@ public class UtilUI {
     public static void openBrowser(Component parent, String url) {
         boolean success = false;
         try {
-            //if (Desktop.isDesktopSupported()) {
             Desktop desktop = java.awt.Desktop.getDesktop();
-            if (desktop.isSupported(Desktop.Action.BROWSE)) {
+            if (desktop.isSupported(Desktop.Action.BROWSE) && hasBrowser()) {
                 URI uri = new URI(url);
                 desktop.browse(uri);
                 success = true;
             }
-            //}
         } catch (URISyntaxException | IOException e) {
             success = false;
         }
         if (!success) {
-            JOptionPane.showMessageDialog(parent, "Can't open the browser - just go to\n" + url);
+            JOptionPane.showMessageDialog(parent, "Can't open a browser - just go to\n" + url);
         }
+    }
+
+    /**
+     * On Linux, Desktop.browse() delegates to xdg-open, which reports success
+     * even when no real browser is installed; the failure then surfaces as a
+     * cryptic "www-browser: No such file or directory" dialog from the child
+     * process. Guard against that by checking PATH for a known browser first, so
+     * we fall back to showing the URL instead. Windows and macOS always have a
+     * default handler, so they are not gated.
+     */
+    private static boolean hasBrowser() {
+        String os = System.getProperty("os.name", "").toLowerCase();
+        if (!os.contains("linux")) {
+            return true;
+        }
+        String path = System.getenv("PATH");
+        if (path == null || path.isEmpty()) {
+            return false;
+        }
+        String[] browsers = {"firefox", "chromium", "chromium-browser",
+            "google-chrome", "google-chrome-stable", "brave-browser",
+            "microsoft-edge", "epiphany-browser", "falkon", "konqueror",
+            "opera", "vivaldi", "midori"};
+        for (String dir : path.split(File.pathSeparator)) {
+            for (String browser : browsers) {
+                File f = new File(dir, browser);
+                if (f.isFile() && f.canExecute()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public static void openImage(Component parent, String filePath) {
