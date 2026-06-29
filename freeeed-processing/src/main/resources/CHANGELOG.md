@@ -6,11 +6,19 @@
 • Inventory inputs workflow
 • Status bar notifications
 • Separated staging and processing actions
+• Free user registration and activation
+• Version, commit, and build time shown in Help ▸ About
 ### Improved
 
 • Simplified processing workflow
 • Reduced unnecessary popup dialogs
 • Clearer workflow navigation
+• Output folder defaults to a writable location and can be changed in any edition
+• Cleaner, more open look — removed the plan-monitor banner and storage-limit prompts
+• Clearer message when no web browser is installed
+• Linux installer adds its application-menu entry automatically
+• Inventory no longer freezes the UI
+• More reliable document conversion; removed the obsolete wkhtmltopdf dependency
 
 ## Version 10.8.1
 ### Added
